@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -6,47 +7,112 @@ import {
   FileText, 
   Clock, 
   TrendingUp,
-  ArrowUpRight
+  ArrowUpRight,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { supabase } from "@/integrations/supabase/client";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
-const stats = [
-  { label: "Contratos este mês", value: "12", icon: FileText, trend: "+23%" },
-  { label: "Templates ativos", value: "5", icon: TrendingUp, trend: null },
-];
+interface Contract {
+  id: string;
+  client_data: unknown;
+  status: string;
+  created_at: string;
+  template_id: string | null;
+}
 
-const recentContracts = [
-  { 
-    id: "127", 
-    client: "João da Silva", 
-    template: "Contrato Padrão",
-    date: "Hoje, 14:30",
-    status: "generated" as const
-  },
-  { 
-    id: "126", 
-    client: "Maria Santos", 
-    template: "Contrato Premium",
-    date: "Ontem, 09:15",
-    status: "sent" as const
-  },
-  { 
-    id: "125", 
-    client: "Pedro Costa", 
-    template: "Contrato Simplificado",
-    date: "2 dias atrás",
-    status: "draft" as const
-  },
-];
+interface Template {
+  id: string;
+  name: string;
+}
 
-const statusConfig = {
-  draft: { label: "Rascunho", variant: "default" as const },
-  generated: { label: "Gerado", variant: "success" as const },
-  sent: { label: "Enviado", variant: "warning" as const },
+const statusConfig: Record<string, { label: string; variant: "default" | "success" | "warning" | "error" }> = {
+  draft: { label: "Rascunho", variant: "default" },
+  generated: { label: "Gerado", variant: "success" },
+  sent: { label: "Enviado", variant: "warning" },
 };
 
 export default function Dashboard() {
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [contractsThisMonth, setContractsThisMonth] = useState(0);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsLoggedIn(!!session);
+      
+      if (!session) {
+        setIsLoading(false);
+        return;
+      }
+
+      // Fetch recent contracts
+      const { data: contractsData } = await supabase
+        .from("contracts")
+        .select("id, client_data, status, created_at, template_id")
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      // Fetch templates count
+      const { data: templatesData } = await supabase
+        .from("templates")
+        .select("id, name");
+
+      // Count contracts this month
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+      
+      const { count } = await supabase
+        .from("contracts")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", startOfMonth.toISOString());
+
+      setContracts(contractsData || []);
+      setTemplates(templatesData || []);
+      setContractsThisMonth(count || 0);
+      setIsLoading(false);
+    };
+
+    fetchData();
+  }, []);
+
+  const formatDate = (dateString: string) => {
+    return formatDistanceToNow(new Date(dateString), { 
+      addSuffix: true, 
+      locale: ptBR 
+    });
+  };
+
+  const getTemplateName = (templateId: string | null) => {
+    if (!templateId) return "Template padrão";
+    const template = templates.find(t => t.id === templateId);
+    return template?.name || "Template";
+  };
+
+  const stats = [
+    { 
+      label: "Contratos este mês", 
+      value: contractsThisMonth.toString(), 
+      icon: FileText, 
+      trend: null 
+    },
+    { 
+      label: "Templates salvos", 
+      value: templates.length.toString(), 
+      icon: TrendingUp, 
+      trend: null 
+    },
+  ];
+
   return (
     <AppLayout>
       <div className="animate-fade-in">
@@ -57,7 +123,7 @@ export default function Dashboard() {
               Dashboard
             </h1>
             <p className="mt-1 text-muted-foreground">
-              Bem-vindo ao ContractFlow
+              {isLoggedIn ? "Bem-vindo ao ContractFlow" : "Faça login para ver seus dados"}
             </p>
           </div>
           <Button asChild className="gap-2">
@@ -91,7 +157,7 @@ export default function Dashboard() {
               </div>
               <div className="mt-4">
                 <p className="font-mono text-3xl font-bold text-foreground">
-                  {stat.value}
+                  {isLoading ? "-" : stat.value}
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">{stat.label}</p>
               </div>
@@ -154,29 +220,58 @@ export default function Dashboard() {
           </div>
 
           <div className="divide-y divide-border">
-            {recentContracts.map((contract) => (
-              <Link
-                key={contract.id}
-                to={`/contract/${contract.id}`}
-                className="flex items-center justify-between px-6 py-4 transition-colors duration-fast hover:bg-muted/50"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                    <FileText className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">{contract.client}</p>
-                    <p className="text-sm text-muted-foreground">{contract.template}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-sm text-muted-foreground">{contract.date}</span>
-                  <StatusBadge variant={statusConfig[contract.status].variant}>
-                    {statusConfig[contract.status].label}
-                  </StatusBadge>
-                </div>
-              </Link>
-            ))}
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : !isLoggedIn ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <FileText className="h-12 w-12 text-muted-foreground/50 mb-4" />
+                <p className="text-muted-foreground">Faça login para ver seus contratos</p>
+              </div>
+            ) : contracts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <FileText className="h-12 w-12 text-muted-foreground/50 mb-4" />
+                <p className="text-muted-foreground">Nenhum contrato gerado ainda</p>
+                <Button asChild className="mt-4">
+                  <Link to="/contract/new">Criar primeiro contrato</Link>
+                </Button>
+              </div>
+            ) : (
+              contracts.map((contract) => {
+                const clientName = (contract.client_data as { nome?: string })?.nome || "Cliente";
+                const status = contract.status as keyof typeof statusConfig;
+                const config = statusConfig[status] || statusConfig.draft;
+                
+                return (
+                  <Link
+                    key={contract.id}
+                    to={`/contract/${contract.id}`}
+                    className="flex items-center justify-between px-6 py-4 transition-colors duration-fast hover:bg-muted/50"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                        <FileText className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">{clientName}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {getTemplateName(contract.template_id)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm text-muted-foreground">
+                        {formatDate(contract.created_at)}
+                      </span>
+                      <StatusBadge variant={config.variant}>
+                        {config.label}
+                      </StatusBadge>
+                    </div>
+                  </Link>
+                );
+              })
+            )}
           </div>
         </motion.div>
       </div>
