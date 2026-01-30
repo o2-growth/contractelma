@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { FileText, Plus, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { FileText, Plus, MoreVertical, Pencil, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { TemplateEditor } from "@/components/templates/TemplateEditor";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { defaultTemplates } from "@/constants/contractTemplates";
 
 interface Template {
   id: string;
@@ -20,75 +22,63 @@ interface Template {
   placeholders: number;
   createdAt: string;
   usageCount: number;
+  isSystem?: boolean;
 }
 
-const initialTemplates: Template[] = [
-  {
-    id: "1",
-    name: "Contrato Padrão",
-    description: "Contrato de prestação de serviços com cláusulas padrão para a maioria das situações",
-    content: `CONTRATO DE PRESTAÇÃO DE SERVIÇOS
-
-Pelo presente instrumento particular, {{nome}}, inscrito no CPF sob o nº {{cpf}}, residente e domiciliado em {{endereco}}, telefone {{telefone}}, e-mail {{email}}, doravante denominado CONTRATANTE, e de outro lado a empresa XYZ Ltda., doravante denominada CONTRATADA, têm entre si justo e acordado o seguinte:
-
-CLÁUSULA 1ª - DO OBJETO
-O presente contrato tem por objeto a prestação dos seguintes serviços:
-{{produtos}}
-
-CLÁUSULA 2ª - DO VALOR
-O valor total deste contrato é de {{valor_total}}.
-
-CLÁUSULA 3ª - DO PRAZO
-Este contrato tem início na data de sua assinatura e vigorará pelo período acordado entre as partes.
-
-Data: {{data}}`,
-    placeholders: 8,
-    createdAt: "10 dias atrás",
-    usageCount: 24,
-  },
-  {
-    id: "2",
-    name: "Contrato Premium",
-    description: "Contrato completo com termos avançados, garantias e cláusulas especiais",
-    content: `CONTRATO PREMIUM DE PRESTAÇÃO DE SERVIÇOS
-
-CONTRATANTE: {{nome}}
-CPF: {{cpf}}
-Endereço: {{endereco}}
-Telefone: {{telefone}}
-E-mail: {{email}}
-
-CLÁUSULA 1ª - DO OBJETO
-{{produtos}}
-
-CLÁUSULA 2ª - DO VALOR E PAGAMENTO
-Valor Total: {{valor_total}}
-
-Data: {{data}}`,
-    placeholders: 12,
-    createdAt: "5 dias atrás",
-    usageCount: 15,
-  },
-  {
-    id: "3",
-    name: "Contrato Simplificado",
-    description: "Versão resumida para negociações rápidas e clientes recorrentes",
-    content: `CONTRATO SIMPLIFICADO
-
-Cliente: {{nome}} (CPF: {{cpf}})
-Serviços: {{produtos}}
-Valor: {{valor_total}}
-Data: {{data}}`,
-    placeholders: 5,
-    createdAt: "3 dias atrás",
-    usageCount: 8,
-  },
-];
+// Convert system templates to display format
+const systemTemplates: Template[] = defaultTemplates.map((t) => ({
+  id: t.id,
+  name: t.name,
+  description: t.description,
+  content: t.content || "",
+  placeholders: (t.content?.match(/{{[^}]+}}/g) || []).length,
+  createdAt: t.createdAt,
+  usageCount: 0,
+  isSystem: true,
+}));
 
 export default function Templates() {
-  const [templates, setTemplates] = useState<Template[]>(initialTemplates);
+  const [templates, setTemplates] = useState<Template[]>(systemTemplates);
+  const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
+
+  useEffect(() => {
+    loadUserTemplates();
+  }, []);
+
+  const loadUserTemplates = async () => {
+    setIsLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        const { data, error } = await supabase
+          .from("templates")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (!error && data) {
+          const userTemplates: Template[] = data.map((t) => ({
+            id: t.id,
+            name: t.name,
+            description: t.description || "",
+            content: t.content,
+            placeholders: (t.content?.match(/{{[^}]+}}/g) || []).length,
+            createdAt: new Date(t.created_at).toLocaleDateString("pt-BR"),
+            usageCount: 0,
+            isSystem: false,
+          }));
+          // User templates first, then system templates
+          setTemplates([...userTemplates, ...systemTemplates]);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading templates:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleCreateNew = () => {
     setEditingTemplate(null);
@@ -100,9 +90,26 @@ export default function Templates() {
     setIsEditing(true);
   };
 
-  const handleDelete = (templateId: string) => {
-    setTemplates(templates.filter(t => t.id !== templateId));
-    toast.success("Template excluído com sucesso");
+  const handleDelete = async (template: Template) => {
+    if (template.isSystem) {
+      toast.error("Templates do sistema não podem ser excluídos");
+      return;
+    }
+    
+    try {
+      const { error } = await supabase
+        .from("templates")
+        .delete()
+        .eq("id", template.id);
+
+      if (error) throw error;
+      
+      setTemplates(templates.filter(t => t.id !== template.id));
+      toast.success("Template excluído com sucesso");
+    } catch (error) {
+      console.error("Error deleting template:", error);
+      toast.error("Erro ao excluir template");
+    }
   };
 
   const handleSave = (name: string, content: string) => {
@@ -161,6 +168,16 @@ export default function Templates() {
     );
   }
 
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
       <div className="animate-fade-in">
@@ -171,7 +188,7 @@ export default function Templates() {
               Templates
             </h1>
             <p className="mt-1 text-muted-foreground">
-              Gerencie seus modelos de contrato
+              {templates.length} modelos disponíveis ({systemTemplates.length} do sistema)
             </p>
           </div>
           <Button className="gap-2" onClick={handleCreateNew}>
@@ -187,7 +204,7 @@ export default function Templates() {
               key={template.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
+              transition={{ delay: Math.min(index * 0.05, 0.5) }}
               className="group rounded-xl border border-border bg-card p-6 shadow-card transition-all duration-normal hover:shadow-card-hover"
             >
               <div className="flex items-start justify-between">
@@ -211,10 +228,11 @@ export default function Templates() {
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       className="text-destructive"
-                      onClick={() => handleDelete(template.id)}
+                      onClick={() => handleDelete(template)}
+                      disabled={template.isSystem}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
-                      Excluir
+                      {template.isSystem ? "Modelo do sistema" : "Excluir"}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -229,16 +247,20 @@ export default function Templates() {
 
               <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
                 <span>{template.placeholders} campos</span>
-                <span>•</span>
-                <span>{template.usageCount} usos</span>
+                {template.isSystem && (
+                  <>
+                    <span>•</span>
+                    <span className="text-primary font-medium">Sistema</span>
+                  </>
+                )}
               </div>
 
               <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
                 <span className="text-xs text-muted-foreground">
-                  Criado: {template.createdAt}
+                  {template.createdAt}
                 </span>
                 <Button variant="outline" size="sm" onClick={() => handleEdit(template)}>
-                  Editar
+                  {template.isSystem ? "Visualizar" : "Editar"}
                 </Button>
               </div>
             </motion.div>
@@ -248,7 +270,7 @@ export default function Templates() {
           <motion.button
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: templates.length * 0.1 }}
+            transition={{ delay: Math.min(templates.length * 0.05, 0.5) }}
             onClick={handleCreateNew}
             className="flex min-h-[280px] flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-card/50 p-6 text-muted-foreground transition-all duration-normal hover:border-primary hover:bg-primary/5 hover:text-primary"
           >

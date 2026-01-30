@@ -686,8 +686,183 @@ _______________________________
 O2 INC GESTÃO E TECNOLOGIA S.A.
 `,
   },
-];
+  {
+    id: "cfo-enterprise-alternativo",
+    name: "CFO Enterprise (Modelo A)",
+    description: "Versão alternativa do contrato CFO Enterprise com estrutura simplificada",
+    createdAt: "Modelo do sistema",
+    content: `# INSTRUMENTO PARTICULAR DE PRESTAÇÃO DE SERVIÇOS - CFO ENTERPRISE
 
+Pelo presente instrumento:
+
+**{{CLIENTE}}**, sociedade empresária limitada, inscrita no CNPJ sob o nº **{{CNPJ}}**, com sede na **{{ENDERECO_EMPRESA}}** representada neste ato na forma de seu contrato social, por seu sócio **{{SOCIO}}**, brasileiro, empresário, inscrito no CPF sob número **{{CPF}}**, residente e domiciliado na **{{ENDERECO_SOCIO}}**, doravante referida simplesmente como "CONTRATANTE", e de outro lado;
+
+**O2 INC GESTÃO E TECNOLOGIA S.A.**, sociedade anônima, com sede na cidade de São Paulo, Estado de São Paulo, na Avenida Brigadeiro Faria Lima, 1811, bairro Jardim Paulista, CEP 01452-001, inscrita no Cadastro Nacional de Pessoa Jurídica – CNPJ sob o nº 23.813.779/0001-60, neste ato representada na forma de seu Estatuto Social, doravante denominada simplesmente "CONTRATADA".
+
+---
+
+## CLÁUSULA PRIMEIRA - DO OBJETO
+
+1.1 – A CONTRATADA presta serviços de Assessoria de Gestão Financeira Recorrente, no modelo de **CFO AS A SERVICE**.
+
+### Escopo dos Serviços:
+- Gestão financeira estratégica
+- Análise de indicadores e KPIs
+- Planejamento orçamentário
+- Relatórios gerenciais mensais
+- Acompanhamento de fluxo de caixa
+
+---
+
+## CLÁUSULA SEGUNDA - DA REMUNERAÇÃO
+
+{{FORMA_PAGAMENTO}}
+
+**Valor Total:** {{VALOR_TOTAL}}
+
+---
+
+## CLÁUSULA TERCEIRA - DO PRAZO
+
+3.1 – O presente contrato terá vigência de 12 (doze) meses.
+
+---
+
+## OBSERVAÇÕES
+
+{{OBSERVACOES}}
+
+---
+
+## DATA E ASSINATURA
+
+**Local e Data:** São Paulo, {{DATA}}
+
+_______________________________
+**CONTRATANTE:** {{CLIENTE}}
+CNPJ: {{CNPJ}}
+
+_______________________________
+**CONTRATADA**
+O2 INC GESTÃO E TECNOLOGIA S.A.
+`,
+  },
+  {
+    id: "russowski-modelo",
+    name: "Contrato Russowski",
+    description: "Modelo de contrato padrão Russowski para prestação de serviços",
+    createdAt: "Modelo do sistema",
+    content: `# INSTRUMENTO PARTICULAR DE PRESTAÇÃO DE SERVIÇOS
+
+Pelo presente instrumento:
+
+**{{CLIENTE}}**, sociedade empresária limitada, inscrita no CNPJ sob o nº **{{CNPJ}}**, com sede na **{{ENDERECO_EMPRESA}}** representada neste ato na forma de seu contrato social, por seu sócio **{{SOCIO}}**, brasileiro, empresário, inscrito no CPF sob número **{{CPF}}**, residente e domiciliado na **{{ENDERECO_SOCIO}}**, doravante referida simplesmente como "CONTRATANTE", e de outro lado;
+
+**O2 INC GESTÃO E TECNOLOGIA S.A.**, sociedade anônima, com sede na cidade de São Paulo, Estado de São Paulo, na Avenida Brigadeiro Faria Lima, 1811, bairro Jardim Paulista, CEP 01452-001, inscrita no Cadastro Nacional de Pessoa Jurídica – CNPJ sob o nº 23.813.779/0001-60, neste ato representada na forma de seu Estatuto Social, doravante denominada simplesmente "CONTRATADA".
+
+---
+
+## CLÁUSULA PRIMEIRA - DO OBJETO
+
+1.1 – A CONTRATADA prestará os serviços conforme especificado neste instrumento.
+
+---
+
+## CLÁUSULA SEGUNDA - DA REMUNERAÇÃO
+
+{{FORMA_PAGAMENTO}}
+
+**Valor Total:** {{VALOR_TOTAL}}
+
+---
+
+## CLÁUSULA TERCEIRA - DO PRAZO
+
+3.1 – O presente contrato terá vigência conforme acordado entre as partes.
+
+---
+
+## OBSERVAÇÕES
+
+{{OBSERVACOES}}
+
+---
+
+## DATA E ASSINATURA
+
+**Local e Data:** {{DATA}}
+
+_______________________________
+**CONTRATANTE:** {{CLIENTE}}
+CNPJ: {{CNPJ}}
+
+_______________________________
+**CONTRATADA**
+O2 INC GESTÃO E TECNOLOGIA S.A.
+`,
+  },
+  {
+    id: "parceria-oxy-hacker-v2",
+    name: "Parceria Oxy Hacker (Modelo 2)",
+    description: "Segunda versão do contrato de parceria estratégica Oxy Hacker",
+    createdAt: "Modelo do sistema",
+    content: `# CONTRATO DE PARCERIA ESTRATÉGICA OXY HACKER
+
+Pelo presente instrumento:
+
+**O2 INC GESTÃO E TECNOLOGIA S.A.**, sociedade anônima, com sede na cidade de São Paulo, Estado de São Paulo, na Avenida Brigadeiro Faria Lima, 1811, bairro Jardim Paulista, CEP 01452-001, inscrita no Cadastro Nacional de Pessoa Jurídica – CNPJ sob o nº 23.813.779/0001-60, representada na forma de seu estatuto social, doravante denominada como "O2 INC".
+
+**{{CLIENTE}}**, inscrita no CNPJ sob nº **{{CNPJ}}**, com sede em **{{ENDERECO_EMPRESA}}**, representada neste ato por **{{SOCIO}}**, CPF nº **{{CPF}}**, doravante denominada simplesmente "PARCEIRA".
+
+---
+
+## CLÁUSULA PRIMEIRA - DO OBJETO
+
+1.1. O presente contrato tem por objeto a formalização da parceria estratégica para o programa **Oxy Hacker**.
+
+1.2. A PARCEIRA terá direito a:
+- Licença de uso da metodologia Oxy Hacker
+- Acesso à plataforma Oxy Finance
+- Treinamentos e certificações
+- Suporte técnico e operacional
+
+---
+
+## CLÁUSULA SEGUNDA - DA REMUNERAÇÃO
+
+{{FORMA_PAGAMENTO}}
+
+**Valor Total:** {{VALOR_TOTAL}}
+
+---
+
+## CLÁUSULA TERCEIRA - DAS RESPONSABILIDADES
+
+3.1. **O2 INC:** Fornecerá toda a estrutura metodológica e tecnológica.
+
+3.2. **PARCEIRA:** Será responsável pela execução e atendimento aos clientes finais.
+
+---
+
+## OBSERVAÇÕES
+
+{{OBSERVACOES}}
+
+---
+
+## DATA E ASSINATURA
+
+**Local e Data:** São Paulo, {{DATA}}
+
+_______________________________
+**PARCEIRA:** {{CLIENTE}}
+CNPJ: {{CNPJ}}
+
+_______________________________
+**O2 INC GESTÃO E TECNOLOGIA S.A.**
+`,
+  },
+];
 // Available placeholders for templates
 export const availablePlaceholders = [
   { key: "CLIENTE", label: "Nome da Empresa", category: "empresa" },
