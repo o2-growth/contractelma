@@ -77,21 +77,46 @@ function replacePlaceholders(
   const totalValue = products.reduce((sum, p) => sum + p.total, 0);
   const productsTable = generateProductsTable(products);
   
-  // List of all placeholders to replace
+  // Extended list of all placeholders (both cases and variants)
   const replacements: Record<string, string> = {
-    // Client data placeholders (both cases)
+    // Client/Company data placeholders
+    "{{cliente}}": clientData.nome || "",
+    "{{CLIENTE}}": clientData.nome || "",
     "{{nome}}": clientData.nome || "",
     "{{NOME}}": clientData.nome || "",
+    "{{cnpj}}": clientData.cpf || "", // Using CPF field for CNPJ as well
+    "{{CNPJ}}": clientData.cpf || "",
     "{{cpf}}": clientData.cpf || "",
     "{{CPF}}": clientData.cpf || "",
     "{{rg}}": clientData.rg || "",
     "{{RG}}": clientData.rg || "",
+    
+    // Address placeholders
     "{{endereco}}": clientData.endereco || "",
     "{{ENDERECO}}": clientData.endereco || "",
+    "{{endereco_empresa}}": clientData.endereco || "",
+    "{{ENDERECO_EMPRESA}}": clientData.endereco || "",
+    "{{endereco_socio}}": clientData.endereco || "",
+    "{{ENDERECO_SOCIO}}": clientData.endereco || "",
+    "{{endereçodaempresa}}": clientData.endereco || "",
+    "{{endereço-sócio}}": clientData.endereco || "",
+    
+    // Representative/Partner placeholders
+    "{{socio}}": clientData.nome || "",
+    "{{SOCIO}}": clientData.nome || "",
+    "{{sócio}}": clientData.nome || "",
+    "{{representante}}": clientData.nome || "",
+    "{{REPRESENTANTE}}": clientData.nome || "",
+    "{{cpf-sócio}}": clientData.cpf || "",
+    "{{nomedaempresa}}": clientData.nome || "",
+    
+    // Contact placeholders
     "{{telefone}}": clientData.telefone || "",
     "{{TELEFONE}}": clientData.telefone || "",
     "{{email}}": clientData.email || "",
     "{{EMAIL}}": clientData.email || "",
+    
+    // Personal data placeholders
     "{{nascimento}}": clientData.nascimento || "",
     "{{NASCIMENTO}}": clientData.nascimento || "",
     "{{estado_civil}}": clientData.estado_civil || "",
@@ -106,6 +131,8 @@ function replacePlaceholders(
     "{{VALOR_TOTAL}}": formatCurrency(totalValue),
     "{{forma_pagamento}}": paymentTerms || "",
     "{{FORMA_PAGAMENTO}}": paymentTerms || "",
+    "{{parcelas}}": paymentTerms || "",
+    "{{PARCELAS}}": paymentTerms || "",
     "{{observacoes}}": specialNotes || "",
     "{{OBSERVACOES}}": specialNotes || "",
     

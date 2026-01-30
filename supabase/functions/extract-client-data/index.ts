@@ -22,37 +22,63 @@ serve(async (req) => {
       throw new Error("No document text provided");
     }
 
-    const systemPrompt = `Você é um especialista em extração de dados de documentos brasileiros. 
-Analise o texto fornecido e extraia os seguintes campos do cliente:
-- nome: Nome completo do cliente
-- cpf: CPF no formato XXX.XXX.XXX-XX
-- rg: RG com órgão emissor
-- endereco: Endereço completo (rua, número, bairro, cidade, estado, CEP)
-- telefone: Telefone no formato (XX) XXXXX-XXXX
-- email: E-mail do cliente
+    // Prompt otimizado para extração de dados de contratos O2 Inc
+    const systemPrompt = `Você é um especialista em extração de dados de documentos empresariais brasileiros.
+
+Analise o texto fornecido e extraia TODOS os dados que encontrar. O documento pode ser uma ficha cadastral, contrato, ou documento similar.
+
+CAMPOS PARA EXTRAIR:
+
+**DADOS DA EMPRESA (CONTRATANTE):**
+- cliente: Razão social ou nome da empresa (busque por "CLIENTE", "CONTRATANTE", "Razão Social", nome da empresa)
+- cnpj: CNPJ da empresa (formato: XX.XXX.XXX/XXXX-XX)
+- endereco_empresa: Endereço completo da empresa
+
+**DADOS DO REPRESENTANTE/SÓCIO:**
+- socio: Nome do sócio ou representante legal (busque por "SÓCIO", "Representante", "Representado por")
+- cpf: CPF do representante (formato: XXX.XXX.XXX-XX)
+- rg: RG do representante com órgão emissor
+- endereco_socio: Endereço residencial do sócio
+
+**DADOS DE CONTATO:**
+- telefone: Telefone de contato (formato: (XX) XXXXX-XXXX)
+- email: E-mail de contato
+
+**DADOS PESSOAIS (se pessoa física):**
+- nome: Nome completo (se diferente de cliente/socio)
+- endereco: Endereço (se diferente dos anteriores)
 - nascimento: Data de nascimento no formato DD/MM/AAAA
-- estado_civil: Estado civil (solteiro, casado, divorciado, viúvo, etc.)
+- estado_civil: Estado civil (solteiro, casado, divorciado, viúvo)
 - profissao: Profissão ou ocupação
 
 Para cada campo, forneça também um nível de confiança:
 - "high": Campo claramente identificado no documento
 - "medium": Campo identificado mas pode conter erros
-- "low": Campo inferido ou parcialmente identificado
+- "low": Campo inferido, parcialmente identificado ou não encontrado
 
 Retorne APENAS um JSON válido no seguinte formato:
 {
-  "nome": { "value": "...", "confidence": "high|medium|low" },
+  "cliente": { "value": "...", "confidence": "high|medium|low" },
+  "cnpj": { "value": "...", "confidence": "high|medium|low" },
+  "endereco_empresa": { "value": "...", "confidence": "high|medium|low" },
+  "socio": { "value": "...", "confidence": "high|medium|low" },
   "cpf": { "value": "...", "confidence": "high|medium|low" },
   "rg": { "value": "...", "confidence": "high|medium|low" },
-  "endereco": { "value": "...", "confidence": "high|medium|low" },
+  "endereco_socio": { "value": "...", "confidence": "high|medium|low" },
   "telefone": { "value": "...", "confidence": "high|medium|low" },
   "email": { "value": "...", "confidence": "high|medium|low" },
+  "nome": { "value": "...", "confidence": "high|medium|low" },
+  "endereco": { "value": "...", "confidence": "high|medium|low" },
   "nascimento": { "value": "...", "confidence": "high|medium|low" },
   "estado_civil": { "value": "...", "confidence": "high|medium|low" },
   "profissao": { "value": "...", "confidence": "high|medium|low" }
 }
 
-Se um campo não for encontrado, deixe o value como string vazia e confidence como "low".`;
+IMPORTANTE:
+- Se um campo não for encontrado, deixe o value como string vazia e confidence como "low"
+- Mantenha a formatação original dos dados (CPF com pontos, CNPJ formatado, etc)
+- Priorize dados empresariais (CNPJ, razão social) sobre dados pessoais
+- Use o campo "nome" como fallback para "socio" ou "cliente" se necessário`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -61,10 +87,10 @@ Se um campo não for encontrado, deixe o value como string vazia e confidence co
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Tipo de documento: ${documentType || "Desconhecido"}\n\nConteúdo do documento:\n${documentText}` },
+          { role: "user", content: `Tipo de documento: ${documentType || "Ficha cadastral/Contrato"}\n\nConteúdo do documento:\n${documentText}` },
         ],
         temperature: 0.1,
       }),
@@ -118,10 +144,30 @@ Se um campo não for encontrado, deixe o value como string vazia e confidence co
     }, 0);
     const averageConfidence = totalConfidence / fields.length;
 
+    // Create backward-compatible response
+    // Map new fields to legacy format for existing components
+    const mappedData = { ...extractedData };
+    
+    // Ensure legacy "nome" field has a value
+    if (!mappedData.nome?.value && mappedData.socio?.value) {
+      mappedData.nome = { ...mappedData.socio };
+    }
+    if (!mappedData.nome?.value && mappedData.cliente?.value) {
+      mappedData.nome = { ...mappedData.cliente };
+    }
+    
+    // Ensure legacy "endereco" field has a value
+    if (!mappedData.endereco?.value && mappedData.endereco_socio?.value) {
+      mappedData.endereco = { ...mappedData.endereco_socio };
+    }
+    if (!mappedData.endereco?.value && mappedData.endereco_empresa?.value) {
+      mappedData.endereco = { ...mappedData.endereco_empresa };
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
-        data: extractedData,
+        data: mappedData,
         confidenceScore: averageConfidence,
       }),
       {
