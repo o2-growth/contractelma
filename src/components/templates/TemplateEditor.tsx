@@ -39,9 +39,16 @@ const placeholders: PlaceholderConfig[] = [
   { key: "produtos", label: "Produtos", icon: FileText, description: "Lista de produtos/serviços" },
 ];
 
+interface DetectedField {
+  key: string;
+  originalValue: string;
+  confidence: number;
+}
+
 interface TemplateEditorProps {
   initialName?: string;
   initialContent?: string;
+  detectedFields?: DetectedField[];
   onSave: (name: string, content: string) => void;
   onCancel: () => void;
 }
@@ -49,6 +56,7 @@ interface TemplateEditorProps {
 export function TemplateEditor({
   initialName = "",
   initialContent = "",
+  detectedFields = [],
   onSave,
   onCancel,
 }: TemplateEditorProps) {
