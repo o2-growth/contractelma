@@ -10,6 +10,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { TemplateEditor } from "@/components/templates/TemplateEditor";
+import { TemplateUpload } from "@/components/templates/TemplateUpload";
+import { TemplateCreationChoice } from "@/components/templates/TemplateCreationChoice";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { defaultTemplates } from "@/constants/contractTemplates";
@@ -25,6 +27,16 @@ interface Template {
   isSystem?: boolean;
 }
 
+interface AnalysisResult {
+  content: string;
+  detectedFields: Array<{ key: string; originalValue: string; confidence: number }>;
+  structureInfo: {
+    paragraphs: number;
+    clauses: number;
+    hasSignatureBlock: boolean;
+  };
+}
+
 // Convert system templates to display format
 const systemTemplates: Template[] = defaultTemplates.map((t) => ({
   id: t.id,
@@ -37,11 +49,16 @@ const systemTemplates: Template[] = defaultTemplates.map((t) => ({
   isSystem: true,
 }));
 
+type ViewMode = "list" | "choice" | "upload" | "editor";
+
 export default function Templates() {
   const [templates, setTemplates] = useState<Template[]>(systemTemplates);
   const [isLoading, setIsLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
+  const [preloadedContent, setPreloadedContent] = useState<string>("");
+  const [preloadedName, setPreloadedName] = useState<string>("");
+  const [detectedFields, setDetectedFields] = useState<AnalysisResult["detectedFields"]>([]);
 
   useEffect(() => {
     loadUserTemplates();
@@ -82,12 +99,39 @@ export default function Templates() {
 
   const handleCreateNew = () => {
     setEditingTemplate(null);
-    setIsEditing(true);
+    setPreloadedContent("");
+    setPreloadedName("");
+    setDetectedFields([]);
+    setViewMode("choice");
+  };
+
+  const handleChooseUpload = () => {
+    setViewMode("upload");
+  };
+
+  const handleChooseCreate = () => {
+    setViewMode("editor");
+  };
+
+  const handleUploadComplete = (result: AnalysisResult, fileName: string) => {
+    // Extract base name from file
+    const baseName = fileName.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+    const capitalizedName = baseName.charAt(0).toUpperCase() + baseName.slice(1);
+    
+    setPreloadedContent(result.content);
+    setPreloadedName(capitalizedName);
+    setDetectedFields(result.detectedFields);
+    setViewMode("editor");
+    
+    toast.success(`${result.detectedFields.length} campos identificados pela IA`);
   };
 
   const handleEdit = (template: Template) => {
     setEditingTemplate(template);
-    setIsEditing(true);
+    setPreloadedContent(template.content);
+    setPreloadedName(template.name);
+    setDetectedFields([]);
+    setViewMode("editor");
   };
 
   const handleDelete = async (template: Template) => {
@@ -112,54 +156,129 @@ export default function Templates() {
     }
   };
 
-  const handleSave = (name: string, content: string) => {
+  const handleSave = async (name: string, content: string) => {
     const placeholderCount = (content.match(/{{[^}]+}}/g) || []).length;
+    const description = `Template com ${placeholderCount} campos dinâmicos`;
     
-    if (editingTemplate) {
-      // Update existing
-      setTemplates(templates.map(t => 
-        t.id === editingTemplate.id 
-          ? { 
-              ...t, 
-              name, 
-              content, 
-              placeholders: placeholderCount,
-              description: `Template com ${placeholderCount} campos dinâmicos`
-            }
-          : t
-      ));
-      toast.success("Template atualizado com sucesso");
-    } else {
-      // Create new
-      const newTemplate: Template = {
-        id: Date.now().toString(),
-        name,
-        content,
-        description: `Template com ${placeholderCount} campos dinâmicos`,
-        placeholders: placeholderCount,
-        createdAt: "Agora",
-        usageCount: 0,
-      };
-      setTemplates([newTemplate, ...templates]);
-      toast.success("Template criado com sucesso");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (editingTemplate && !editingTemplate.isSystem) {
+        // Update existing user template
+        const { error } = await supabase
+          .from("templates")
+          .update({
+            name,
+            content,
+            description,
+          })
+          .eq("id", editingTemplate.id);
+
+        if (error) throw error;
+
+        setTemplates(templates.map(t => 
+          t.id === editingTemplate.id 
+            ? { ...t, name, content, placeholders: placeholderCount, description }
+            : t
+        ));
+        toast.success("Template atualizado com sucesso");
+      } else if (session) {
+        // Create new template in database
+        const { data, error } = await supabase
+          .from("templates")
+          .insert({
+            name,
+            content,
+            description,
+            user_id: session.user.id,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        const newTemplate: Template = {
+          id: data.id,
+          name: data.name,
+          content: data.content,
+          description: data.description || "",
+          placeholders: placeholderCount,
+          createdAt: new Date(data.created_at).toLocaleDateString("pt-BR"),
+          usageCount: 0,
+          isSystem: false,
+        };
+        setTemplates([newTemplate, ...templates]);
+        toast.success("Template criado com sucesso");
+      } else {
+        // Create local template (not logged in)
+        const newTemplate: Template = {
+          id: Date.now().toString(),
+          name,
+          content,
+          description,
+          placeholders: placeholderCount,
+          createdAt: "Agora",
+          usageCount: 0,
+        };
+        setTemplates([newTemplate, ...templates]);
+        toast.success("Template criado com sucesso (local)");
+      }
+    } catch (error) {
+      console.error("Error saving template:", error);
+      toast.error("Erro ao salvar template");
     }
     
-    setIsEditing(false);
+    setViewMode("list");
     setEditingTemplate(null);
+    setPreloadedContent("");
+    setPreloadedName("");
+    setDetectedFields([]);
   };
 
   const handleCancel = () => {
-    setIsEditing(false);
+    setViewMode("list");
     setEditingTemplate(null);
+    setPreloadedContent("");
+    setPreloadedName("");
+    setDetectedFields([]);
   };
 
-  if (isEditing) {
+  // Render based on view mode
+  if (viewMode === "choice") {
+    return (
+      <AppLayout>
+        <div className="animate-fade-in">
+          <TemplateCreationChoice
+            onChooseUpload={handleChooseUpload}
+            onChooseCreate={handleChooseCreate}
+            onCancel={handleCancel}
+          />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (viewMode === "upload") {
+    return (
+      <AppLayout>
+        <div className="animate-fade-in">
+          <TemplateUpload
+            onAnalysisComplete={handleUploadComplete}
+            onCancel={handleCancel}
+          />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (viewMode === "editor") {
     return (
       <AppLayout>
         <div className="animate-fade-in">
           <TemplateEditor
-            initialName={editingTemplate?.name}
-            initialContent={editingTemplate?.content}
+            initialName={preloadedName || editingTemplate?.name}
+            initialContent={preloadedContent || editingTemplate?.content}
+            detectedFields={detectedFields}
             onSave={handleSave}
             onCancel={handleCancel}
           />
