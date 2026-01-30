@@ -1,5 +1,7 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { FileText, Plus, Check } from "lucide-react";
+import { FileText, Plus, Check, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import type { Template } from "../ContractWizard";
 
@@ -8,28 +10,211 @@ interface TemplateSelectionProps {
   onSelect: (template: Template) => void;
 }
 
-const mockTemplates: Template[] = [
+// Default templates when no templates exist in database
+const defaultTemplates: Template[] = [
   {
-    id: "1",
+    id: "default-1",
     name: "Contrato Padrão",
     description: "Contrato de prestação de serviços com cláusulas padrão",
-    createdAt: "10 dias atrás",
+    createdAt: "Modelo do sistema",
+    content: `# CONTRATO DE PRESTAÇÃO DE SERVIÇOS
+
+## CONTRATANTE
+**Nome:** {{NOME}}
+**CPF:** {{CPF}}
+**Endereço:** {{ENDERECO}}
+**Telefone:** {{TELEFONE}}
+**E-mail:** {{EMAIL}}
+
+---
+
+## OBJETO DO CONTRATO
+
+O presente contrato tem por objeto a prestação dos seguintes serviços/produtos:
+
+{{PRODUTOS}}
+
+---
+
+## FORMA DE PAGAMENTO
+
+{{FORMA_PAGAMENTO}}
+
+**Valor Total:** {{VALOR_TOTAL}}
+
+---
+
+## OBSERVAÇÕES
+
+{{OBSERVACOES}}
+
+---
+
+## DATA E ASSINATURA
+
+{{DATA}}
+
+_______________________________
+**Contratante:** {{NOME}}
+CPF: {{CPF}}
+
+_______________________________
+**Contratado**
+`,
   },
   {
-    id: "2",
+    id: "default-2",
     name: "Contrato Premium",
     description: "Contrato completo com termos avançados e garantias",
-    createdAt: "5 dias atrás",
+    createdAt: "Modelo do sistema",
+    content: `# CONTRATO DE PRESTAÇÃO DE SERVIÇOS PREMIUM
+
+**Data:** {{DATA}}
+
+## PARTES CONTRATANTES
+
+### CONTRATANTE:
+- **Nome Completo:** {{NOME}}
+- **CPF:** {{CPF}}
+- **Endereço:** {{ENDERECO}}
+- **Telefone:** {{TELEFONE}}
+- **E-mail:** {{EMAIL}}
+
+---
+
+## CLÁUSULA 1ª - DO OBJETO
+
+O presente instrumento tem por objeto a prestação dos seguintes serviços/produtos conforme tabela abaixo:
+
+{{PRODUTOS}}
+
+## CLÁUSULA 2ª - DO PREÇO E FORMA DE PAGAMENTO
+
+O valor total dos serviços/produtos é de **{{VALOR_TOTAL}}**.
+
+**Condições de Pagamento:**
+{{FORMA_PAGAMENTO}}
+
+## CLÁUSULA 3ª - DAS GARANTIAS
+
+O CONTRATADO garante a qualidade dos serviços/produtos conforme especificações acordadas.
+
+## CLÁUSULA 4ª - DAS OBSERVAÇÕES
+
+{{OBSERVACOES}}
+
+## CLÁUSULA 5ª - DO FORO
+
+Fica eleito o foro da comarca de [CIDADE] para dirimir quaisquer controvérsias oriundas do presente contrato.
+
+---
+
+**Local e Data:** _________________, {{DATA}}
+
+_______________________________
+**CONTRATANTE:** {{NOME}}
+CPF: {{CPF}}
+
+_______________________________
+**CONTRATADO**
+`,
   },
   {
-    id: "3",
+    id: "default-3",
     name: "Contrato Simplificado",
     description: "Versão resumida para negociações rápidas",
-    createdAt: "3 dias atrás",
+    createdAt: "Modelo do sistema",
+    content: `# CONTRATO SIMPLIFICADO
+
+**Data:** {{DATA}}
+
+**CONTRATANTE:** {{NOME}} (CPF: {{CPF}})
+**Endereço:** {{ENDERECO}}
+**Contato:** {{TELEFONE}} | {{EMAIL}}
+
+---
+
+## ITENS CONTRATADOS
+
+{{PRODUTOS}}
+
+**TOTAL: {{VALOR_TOTAL}}**
+
+---
+
+## PAGAMENTO
+
+{{FORMA_PAGAMENTO}}
+
+---
+
+## OBSERVAÇÕES
+
+{{OBSERVACOES}}
+
+---
+
+**Assinaturas:**
+
+_______________          _______________
+Contratante              Contratado
+`,
   },
 ];
 
 export function TemplateSelection({ selectedTemplate, onSelect }: TemplateSelectionProps) {
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadTemplates();
+  }, []);
+
+  const loadTemplates = async () => {
+    setIsLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        const { data, error } = await supabase
+          .from("templates")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          console.error("Error loading templates:", error);
+          setTemplates(defaultTemplates);
+        } else if (data && data.length > 0) {
+          const mappedTemplates: Template[] = data.map((t) => ({
+            id: t.id,
+            name: t.name,
+            description: t.description || "",
+            createdAt: new Date(t.created_at).toLocaleDateString("pt-BR"),
+            content: t.content,
+          }));
+          setTemplates(mappedTemplates);
+        } else {
+          setTemplates(defaultTemplates);
+        }
+      } else {
+        setTemplates(defaultTemplates);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      setTemplates(defaultTemplates);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="mb-6">
@@ -42,7 +227,7 @@ export function TemplateSelection({ selectedTemplate, onSelect }: TemplateSelect
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {mockTemplates.map((template, index) => {
+        {templates.map((template, index) => {
           const isSelected = selectedTemplate?.id === template.id;
           
           return (
@@ -90,7 +275,7 @@ export function TemplateSelection({ selectedTemplate, onSelect }: TemplateSelect
 
                 {/* Footer */}
                 <div className="mt-4 flex items-center text-xs text-muted-foreground">
-                  <span>Criado: {template.createdAt}</span>
+                  <span>{template.createdAt}</span>
                 </div>
               </button>
             </motion.div>
@@ -101,7 +286,7 @@ export function TemplateSelection({ selectedTemplate, onSelect }: TemplateSelect
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: mockTemplates.length * 0.1 }}
+          transition={{ delay: templates.length * 0.1 }}
         >
           <button className="group flex h-full min-h-[200px] w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-card/50 p-6 text-muted-foreground transition-all duration-normal hover:border-primary hover:bg-primary/5 hover:text-primary">
             <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-lg border-2 border-current border-dashed transition-colors duration-normal group-hover:border-solid group-hover:bg-primary/10">

@@ -22,6 +22,7 @@ export interface Template {
   name: string;
   description: string;
   createdAt: string;
+  content?: string;
 }
 
 export interface ClientData {

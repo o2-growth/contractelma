@@ -14,7 +14,130 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      contracts: {
+        Row: {
+          client_data: Json
+          created_at: string
+          generated_file_url: string | null
+          id: string
+          payment_terms: string | null
+          pdf_file_url: string | null
+          products: Json
+          special_notes: string | null
+          status: string
+          template_id: string | null
+          total_value: number | null
+          user_id: string
+        }
+        Insert: {
+          client_data?: Json
+          created_at?: string
+          generated_file_url?: string | null
+          id?: string
+          payment_terms?: string | null
+          pdf_file_url?: string | null
+          products?: Json
+          special_notes?: string | null
+          status?: string
+          template_id?: string | null
+          total_value?: number | null
+          user_id: string
+        }
+        Update: {
+          client_data?: Json
+          created_at?: string
+          generated_file_url?: string | null
+          id?: string
+          payment_terms?: string | null
+          pdf_file_url?: string | null
+          products?: Json
+          special_notes?: string | null
+          status?: string
+          template_id?: string | null
+          total_value?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      extraction_logs: {
+        Row: {
+          confidence_score: number | null
+          contract_id: string | null
+          created_at: string
+          extracted_data: Json
+          id: string
+          manual_corrections: Json | null
+          original_file_url: string | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          contract_id?: string | null
+          created_at?: string
+          extracted_data?: Json
+          id?: string
+          manual_corrections?: Json | null
+          original_file_url?: string | null
+        }
+        Update: {
+          confidence_score?: number | null
+          contract_id?: string | null
+          created_at?: string
+          extracted_data?: Json
+          id?: string
+          manual_corrections?: Json | null
+          original_file_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extraction_logs_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      templates: {
+        Row: {
+          content: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          placeholders: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          placeholders?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          placeholders?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

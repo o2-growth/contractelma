@@ -1,10 +1,12 @@
 import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Upload, FileText, User, X } from "lucide-react";
+import { Upload, FileText, User, X, AlertCircle, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import type { ClientData } from "../ContractWizard";
 import { cn } from "@/lib/utils";
 
@@ -18,11 +20,14 @@ interface ExtractedField {
   confidence: "high" | "medium" | "low";
 }
 
+type ExtractedFields = Record<string, ExtractedField>;
+
 export function ClientDataImport({ clientData, onChange }: ClientDataImportProps) {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [extractedFields, setExtractedFields] = useState<Record<string, ExtractedField> | null>(null);
+  const [extractedFields, setExtractedFields] = useState<ExtractedFields | null>(null);
+  const [extractionError, setExtractionError] = useState<string | null>(null);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -34,39 +39,90 @@ export function ClientDataImport({ clientData, onChange }: ClientDataImportProps
     }
   }, []);
 
-  const handleFile = (file: File) => {
-    setUploadedFile(file);
-    simulateExtraction();
+  const extractTextFromFile = async (file: File): Promise<string> => {
+    // For text-based files, read directly
+    if (file.type === "text/plain" || file.name.endsWith(".txt")) {
+      return await file.text();
+    }
+    
+    // For PDFs and other files, we'll use a simple text extraction
+    // In production, you'd want to use a proper PDF parser
+    const text = await file.text();
+    return text;
   };
 
-  const simulateExtraction = () => {
+  const handleFile = async (file: File) => {
+    setUploadedFile(file);
+    setExtractionError(null);
+    await extractDataFromDocument(file);
+  };
+
+  const extractDataFromDocument = async (file: File) => {
     setIsExtracting(true);
-    
-    // Simulate AI extraction
-    setTimeout(() => {
-      const mockExtracted: Record<string, ExtractedField> = {
-        nome: { value: "João da Silva Santos", confidence: "high" },
-        cpf: { value: "123.456.789-00", confidence: "high" },
-        endereco: { value: "Rua das Flores, 123 - Centro", confidence: "medium" },
-        telefone: { value: "(51) 99999-9999", confidence: "high" },
-        email: { value: "joao.silva@email.com", confidence: "high" },
-      };
+    setExtractionError(null);
+
+    try {
+      // Extract text from the file
+      const documentText = await extractTextFromFile(file);
       
-      setExtractedFields(mockExtracted);
-      onChange({
-        nome: mockExtracted.nome.value,
-        cpf: mockExtracted.cpf.value,
-        endereco: mockExtracted.endereco.value,
-        telefone: mockExtracted.telefone.value,
-        email: mockExtracted.email.value,
+      if (!documentText || documentText.length < 10) {
+        throw new Error("Não foi possível extrair texto do documento. Tente outro arquivo ou preencha manualmente.");
+      }
+
+      // Call the edge function
+      const { data, error } = await supabase.functions.invoke("extract-client-data", {
+        body: {
+          documentText,
+          documentType: file.type || file.name.split(".").pop(),
+        },
       });
+
+      if (error) {
+        throw new Error(error.message || "Erro ao processar documento");
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || "Erro na extração de dados");
+      }
+
+      const extracted = data.data as ExtractedFields;
+      setExtractedFields(extracted);
+      
+      // Update client data with extracted values
+      onChange({
+        nome: extracted.nome?.value || "",
+        cpf: extracted.cpf?.value || "",
+        endereco: extracted.endereco?.value || "",
+        telefone: extracted.telefone?.value || "",
+        email: extracted.email?.value || "",
+      });
+
+      toast.success("Dados extraídos com sucesso!", {
+        description: `Confiança média: ${Math.round(data.confidenceScore * 100)}%`,
+      });
+    } catch (error) {
+      console.error("Extraction error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Erro ao extrair dados";
+      setExtractionError(errorMessage);
+      toast.error("Erro na extração", { description: errorMessage });
+      
+      // Allow manual entry even after error
+      setExtractedFields({} as ExtractedFields);
+    } finally {
       setIsExtracting(false);
-    }, 2000);
+    }
+  };
+
+  const retryExtraction = () => {
+    if (uploadedFile) {
+      extractDataFromDocument(uploadedFile);
+    }
   };
 
   const removeFile = () => {
     setUploadedFile(null);
     setExtractedFields(null);
+    setExtractionError(null);
     onChange({
       nome: "",
       cpf: "",
@@ -91,6 +147,10 @@ export function ClientDataImport({ clientData, onChange }: ClientDataImportProps
     }
   };
 
+  const openManualEntry = () => {
+    setExtractedFields({} as ExtractedFields);
+  };
+
   return (
     <div>
       <div className="mb-6">
@@ -98,11 +158,11 @@ export function ClientDataImport({ clientData, onChange }: ClientDataImportProps
           Dados do Cliente
         </h2>
         <p className="mt-1 text-muted-foreground">
-          Faça upload de um documento ou preencha manualmente
+          Faça upload de um documento para extração automática com IA ou preencha manualmente
         </p>
       </div>
 
-      {!uploadedFile ? (
+      {!uploadedFile && extractedFields === null ? (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -121,16 +181,16 @@ export function ClientDataImport({ clientData, onChange }: ClientDataImportProps
             <input
               id="file-input"
               type="file"
-              accept=".pdf,.docx,.jpg,.jpeg,.png"
+              accept=".pdf,.docx,.doc,.txt,.jpg,.jpeg,.png"
               className="hidden"
               onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
             />
             <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
             <h3 className="mt-4 font-display text-lg font-semibold text-foreground">
-              Arraste o documento aqui
+              Arraste o documento do cliente aqui
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              ou clique para selecionar (PDF, DOCX, JPG, PNG)
+              A IA vai extrair automaticamente os dados (PDF, DOCX, TXT, imagens)
             </p>
           </div>
 
@@ -138,7 +198,7 @@ export function ClientDataImport({ clientData, onChange }: ClientDataImportProps
           <div className="mt-6 text-center">
             <Button 
               variant="outline" 
-              onClick={() => setExtractedFields({} as Record<string, ExtractedField>)}
+              onClick={openManualEntry}
               className="gap-2"
             >
               <User className="h-4 w-4" />
@@ -146,7 +206,7 @@ export function ClientDataImport({ clientData, onChange }: ClientDataImportProps
             </Button>
           </div>
         </motion.div>
-      ) : (
+      ) : uploadedFile ? (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -169,12 +229,34 @@ export function ClientDataImport({ clientData, onChange }: ClientDataImportProps
                 </p>
               </div>
             </div>
+
+            {/* Error state */}
+            {extractionError && (
+              <div className="mt-4 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm text-destructive font-medium">Erro na extração</p>
+                    <p className="text-sm text-muted-foreground mt-1">{extractionError}</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={retryExtraction}
+                      className="mt-2 gap-2"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Tentar Novamente
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Extracted data form */}
           <div className="rounded-xl border border-border bg-card p-6">
             <h3 className="mb-4 font-display font-semibold text-foreground">
-              {isExtracting ? "Analisando documento..." : "Dados Extraídos"}
+              {isExtracting ? "Analisando documento com IA..." : "Dados Extraídos"}
             </h3>
 
             {isExtracting ? (
@@ -203,15 +285,16 @@ export function ClientDataImport({ clientData, onChange }: ClientDataImportProps
                   >
                     <div className="flex items-center justify-between">
                       <Label htmlFor={key}>{label}</Label>
-                      {extractedFields?.[key] && getConfidenceBadge(extractedFields[key].confidence)}
+                      {extractedFields?.[key] && extractedFields[key].confidence && 
+                        getConfidenceBadge(extractedFields[key].confidence)
+                      }
                     </div>
                     <Input
                       id={key}
                       value={clientData[key as keyof ClientData]}
                       onChange={(e) => handleFieldChange(key as keyof ClientData, e.target.value)}
-                      className={cn(
-                        key === "cpf" && "font-mono"
-                      )}
+                      placeholder={`Digite o ${label.toLowerCase()}`}
+                      className={cn(key === "cpf" && "font-mono")}
                     />
                   </motion.div>
                 ))}
@@ -219,7 +302,7 @@ export function ClientDataImport({ clientData, onChange }: ClientDataImportProps
             )}
           </div>
         </motion.div>
-      )}
+      ) : null}
 
       {/* Manual form (when no file uploaded but button clicked) */}
       {!uploadedFile && extractedFields !== null && (
@@ -228,9 +311,14 @@ export function ClientDataImport({ clientData, onChange }: ClientDataImportProps
           animate={{ opacity: 1, y: 0 }}
           className="mt-6 rounded-xl border border-border bg-card p-6"
         >
-          <h3 className="mb-4 font-display font-semibold text-foreground">
-            Preencha os dados do cliente
-          </h3>
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="font-display font-semibold text-foreground">
+              Preencha os dados do cliente
+            </h3>
+            <Button variant="ghost" size="sm" onClick={() => setExtractedFields(null)}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {[
               { key: "nome", label: "Nome Completo", span: true },
@@ -245,6 +333,7 @@ export function ClientDataImport({ clientData, onChange }: ClientDataImportProps
                   id={key}
                   value={clientData[key as keyof ClientData]}
                   onChange={(e) => handleFieldChange(key as keyof ClientData, e.target.value)}
+                  placeholder={`Digite o ${label.toLowerCase()}`}
                   className={cn(key === "cpf" && "font-mono")}
                 />
               </div>
