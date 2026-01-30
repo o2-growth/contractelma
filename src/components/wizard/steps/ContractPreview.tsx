@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Download, ArrowLeft, FileText, Loader2, Check } from "lucide-react";
+import { Download, FileText, Loader2, Check, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import type { ContractData } from "../ContractWizard";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +14,9 @@ interface ContractPreviewProps {
 export function ContractPreview({ contractData }: ContractPreviewProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGenerated, setIsGenerated] = useState(false);
+  const [generatedContent, setGeneratedContent] = useState<string | null>(null);
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -22,14 +27,70 @@ export function ContractPreview({ contractData }: ContractPreviewProps) {
 
   const totalGeral = contractData.products.reduce((sum, p) => sum + p.total, 0);
 
-  const handleGenerate = (format: "docx" | "pdf") => {
+  const handleGenerate = async (format: "docx" | "pdf" | "both") => {
     setIsGenerating(true);
-    
-    // Simulate generation
-    setTimeout(() => {
-      setIsGenerating(false);
+    setError(null);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error("Você precisa estar logado para gerar contratos");
+        setIsGenerating(false);
+        return;
+      }
+
+      const { data, error: fnError } = await supabase.functions.invoke("generate-contract", {
+        body: {
+          templateId: contractData.template?.id,
+          templateContent: contractData.template?.content || null,
+          clientData: contractData.clientData,
+          products: contractData.products,
+          paymentTerms: contractData.paymentTerms,
+          specialNotes: contractData.specialNotes,
+          format,
+        },
+      });
+
+      if (fnError) {
+        throw new Error(fnError.message || "Erro ao gerar contrato");
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || "Erro na geração do contrato");
+      }
+
+      setGeneratedContent(data.content);
+      setDownloadUrl(data.downloadUrl);
       setIsGenerated(true);
-    }, 2000);
+      
+      toast.success("Contrato gerado com sucesso!", {
+        description: "Clique em baixar para salvar o arquivo.",
+      });
+    } catch (err) {
+      console.error("Generate error:", err);
+      const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
+      setError(errorMessage);
+      toast.error("Erro ao gerar contrato", { description: errorMessage });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleDownload = () => {
+    if (!downloadUrl || !generatedContent) return;
+
+    const blob = new Blob([generatedContent], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `contrato_${contractData.clientData.nome.replace(/\s+/g, "_")}_${Date.now()}.md`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast.success("Download iniciado!");
   };
 
   return (
@@ -194,35 +255,56 @@ export function ContractPreview({ contractData }: ContractPreviewProps) {
             </div>
           </div>
 
+          {/* Error state */}
+          {error && (
+            <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-5 w-5 text-destructive shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-destructive">Erro</p>
+                  <p className="text-sm text-muted-foreground mt-1">{error}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Download buttons */}
           <div className="space-y-3">
-            <Button
-              onClick={() => handleGenerate("docx")}
-              disabled={isGenerating}
-              className={cn(
-                "w-full gap-2",
-                isGenerated && "bg-success hover:bg-success/90"
-              )}
-            >
-              {isGenerating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : isGenerated ? (
-                <Check className="h-4 w-4" />
-              ) : (
-                <Download className="h-4 w-4" />
-              )}
-              {isGenerated ? "Contrato Gerado!" : "Baixar DOCX"}
-            </Button>
-
-            <Button
-              onClick={() => handleGenerate("pdf")}
-              disabled={isGenerating}
-              variant="outline"
-              className="w-full gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Baixar PDF
-            </Button>
+            {!isGenerated ? (
+              <Button
+                onClick={() => handleGenerate("both")}
+                disabled={isGenerating}
+                className="w-full gap-2"
+              >
+                {isGenerating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <FileText className="h-4 w-4" />
+                )}
+                {isGenerating ? "Gerando..." : "Gerar Contrato"}
+              </Button>
+            ) : (
+              <>
+                <Button
+                  onClick={handleDownload}
+                  className={cn("w-full gap-2", "bg-success hover:bg-success/90")}
+                >
+                  <Download className="h-4 w-4" />
+                  Baixar Contrato
+                </Button>
+                <Button
+                  onClick={() => {
+                    setIsGenerated(false);
+                    setGeneratedContent(null);
+                    setDownloadUrl(null);
+                  }}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Gerar Novamente
+                </Button>
+              </>
+            )}
           </div>
 
           {isGenerated && (
