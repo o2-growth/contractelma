@@ -27,41 +27,134 @@ export function ContractPreview({ contractData }: ContractPreviewProps) {
 
   const totalGeral = contractData.products.reduce((sum, p) => sum + p.total, 0);
 
-  const handleGenerate = async (format: "docx" | "pdf" | "both") => {
+  const generateContractLocally = () => {
+    const template = contractData.template?.content || getDefaultTemplate();
+    return replacePlaceholders(template, contractData);
+  };
+
+  const getDefaultTemplate = () => `# CONTRATO DE PRESTAÇÃO DE SERVIÇOS
+
+## CONTRATANTE
+**Nome:** {{NOME}}
+**CPF:** {{CPF}}
+**Endereço:** {{ENDERECO}}
+**Telefone:** {{TELEFONE}}
+**E-mail:** {{EMAIL}}
+
+---
+
+## OBJETO DO CONTRATO
+
+O presente contrato tem por objeto a prestação dos seguintes serviços/produtos:
+
+{{PRODUTOS}}
+
+---
+
+## FORMA DE PAGAMENTO
+
+{{FORMA_PAGAMENTO}}
+
+**Valor Total:** {{VALOR_TOTAL}}
+
+---
+
+## OBSERVAÇÕES
+
+{{OBSERVACOES}}
+
+---
+
+## DATA E ASSINATURA
+
+{{DATA}}
+
+_______________________________
+**Contratante:** {{NOME}}
+CPF: {{CPF}}
+
+_______________________________
+**Contratado**
+`;
+
+  const formatCurrencyForTemplate = (value: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
+  };
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const generateProductsTable = () => {
+    if (contractData.products.length === 0) return "";
+    
+    let table = "\n| Item | Quantidade | Valor Unit. | Desconto | Total |\n";
+    table += "|------|-----------|-------------|----------|-------|\n";
+    
+    contractData.products.forEach((product) => {
+      table += `| ${product.name} | ${product.quantity} | ${formatCurrencyForTemplate(product.unitPrice)} | ${product.discount}% | ${formatCurrencyForTemplate(product.total)} |\n`;
+    });
+    
+    const total = contractData.products.reduce((sum, p) => sum + p.total, 0);
+    table += `| **TOTAL** | | | | **${formatCurrencyForTemplate(total)}** |\n`;
+    
+    return table;
+  };
+
+  const replacePlaceholders = (template: string, data: ContractData) => {
+    const totalValue = data.products.reduce((sum, p) => sum + p.total, 0);
+    const productsTable = generateProductsTable();
+    
+    const replacements: Record<string, string> = {
+      "{{cliente}}": data.clientData.nome || "",
+      "{{CLIENTE}}": data.clientData.nome || "",
+      "{{nome}}": data.clientData.nome || "",
+      "{{NOME}}": data.clientData.nome || "",
+      "{{cpf}}": data.clientData.cpf || "",
+      "{{CPF}}": data.clientData.cpf || "",
+      "{{endereco}}": data.clientData.endereco || "",
+      "{{ENDERECO}}": data.clientData.endereco || "",
+      "{{telefone}}": data.clientData.telefone || "",
+      "{{TELEFONE}}": data.clientData.telefone || "",
+      "{{email}}": data.clientData.email || "",
+      "{{EMAIL}}": data.clientData.email || "",
+      "{{produtos}}": productsTable,
+      "{{PRODUTOS}}": productsTable,
+      "{{valor_total}}": formatCurrencyForTemplate(totalValue),
+      "{{VALOR_TOTAL}}": formatCurrencyForTemplate(totalValue),
+      "{{forma_pagamento}}": data.paymentTerms || "",
+      "{{FORMA_PAGAMENTO}}": data.paymentTerms || "",
+      "{{observacoes}}": data.specialNotes || "",
+      "{{OBSERVACOES}}": data.specialNotes || "",
+      "{{data}}": formatDate(new Date()),
+      "{{DATA}}": formatDate(new Date()),
+    };
+    
+    let result = template;
+    for (const [placeholder, value] of Object.entries(replacements)) {
+      result = result.split(placeholder).join(value);
+    }
+    
+    return result;
+  };
+
+  const handleGenerate = async (_format: "docx" | "pdf" | "both") => {
     setIsGenerating(true);
     setError(null);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      // Generate contract locally - no auth required
+      const content = generateContractLocally();
       
-      if (!session) {
-        toast.error("Você precisa estar logado para gerar contratos");
-        setIsGenerating(false);
-        return;
-      }
-
-      const { data, error: fnError } = await supabase.functions.invoke("generate-contract", {
-        body: {
-          templateId: contractData.template?.id,
-          templateContent: contractData.template?.content || null,
-          clientData: contractData.clientData,
-          products: contractData.products,
-          paymentTerms: contractData.paymentTerms,
-          specialNotes: contractData.specialNotes,
-          format,
-        },
-      });
-
-      if (fnError) {
-        throw new Error(fnError.message || "Erro ao gerar contrato");
-      }
-
-      if (!data.success) {
-        throw new Error(data.error || "Erro na geração do contrato");
-      }
-
-      setGeneratedContent(data.content);
-      setDownloadUrl(data.downloadUrl);
+      setGeneratedContent(content);
+      setDownloadUrl("local");
       setIsGenerated(true);
       
       toast.success("Contrato gerado com sucesso!", {
