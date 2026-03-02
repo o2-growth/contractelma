@@ -1,22 +1,26 @@
 
 
-# Corrigir Preview ao Vivo do Contrato
+# Corrigir Layout e Preview do Contrato - Passo 2
 
-## Problemas Identificados
-1. **Tabelas não renderizam** — `react-markdown` v10 não suporta tabelas GFM por padrão, precisa do plugin `remark-gfm`
-2. **Tags `<var>` aparecem como texto** — `react-markdown` v10 não processa HTML inline sem o plugin `rehype-raw`
-3. **Títulos e formatação não aparecem** — possivelmente relacionado à falta do `remark-gfm`
+## Problemas
+1. **Preview não parece um documento Word** -- o markdown renderiza mas não tem aspecto de documento (falta fundo branco, bordas de página, tipografia de documento)
+2. **Painel esquerdo (formulário) ocupa muito espaço** -- está 50/50, precisa ser menor para dar mais destaque ao documento
 
 ## Alterações
 
-### 1. Instalar dependências
-- `remark-gfm` — suporte a tabelas, strikethrough, etc.
-- `rehype-raw` — permitir HTML inline (para as tags `<var>`)
+### 1. `src/components/wizard/steps/ClientDataImport.tsx`
+- Mudar proporção dos painéis: formulário **35%**, preview **65%**
+- Reduzir `minSize` do painel esquerdo para 25
 
 ### 2. `src/components/wizard/steps/ContractLivePreview.tsx`
-- Importar e usar `remarkGfm` e `rehypeRaw` no `ReactMarkdown`
-- Adicionar `rehypeRaw` para que as tags `<var>` sejam parseadas como HTML real
-- Registrar componente customizado para `var` no ReactMarkdown para renderizar os badges amarelos
-- Remover a lógica manual de `processChildren` / `renderVarTags` que tenta fazer parse de string (desnecessário com `rehypeRaw`)
-- Simplificar os overrides dos componentes
+- Estilizar o preview como uma **página de documento real** (estilo A4):
+  - Fundo branco com sombra e bordas sutis (simula folha de papel)
+  - Padding generoso (como margens de documento Word)
+  - Tipografia serifada ou mais formal para o corpo do texto
+  - Fundo cinza claro atrás da "folha" para criar contraste
+- Melhorar estilos do prose: tamanho de fonte adequado, espaçamento entre parágrafos, tabelas com bordas completas
+- Variáveis não preenchidas continuam com badge amarelo
+
+### 3. `src/components/wizard/ContractWizard.tsx`
+- Aumentar container para `max-w-[1400px]` no passo 2 para aproveitar melhor a tela
 
