@@ -6,11 +6,13 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { ClientData, Template } from "../ContractWizard";
 import { availablePlaceholders } from "@/constants/contractTemplates";
 import { cn } from "@/lib/utils";
+import { ContractLivePreview } from "./ContractLivePreview";
 
 interface ClientDataImportProps {
   clientData: ClientData;
@@ -233,110 +235,122 @@ export function ClientDataImport({ clientData, onChange, selectedTemplate }: Cli
   };
 
   return (
-    <div>
-      <div className="mb-6">
-        <h2 className="font-display text-2xl font-bold text-foreground">
-          Dados do Contrato
-        </h2>
-        <p className="mt-1 text-muted-foreground">
-          Preencha os campos necessários para o template selecionado ou faça upload de um documento para extração automática
-        </p>
-      </div>
-
-      {!showForm ? (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          {/* Upload area */}
-          <div
-            className={cn("upload-area", isDragOver && "dragover")}
-            onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
-            onDragLeave={() => setIsDragOver(false)}
-            onDrop={handleDrop}
-            onClick={() => document.getElementById("file-input")?.click()}
-          >
-            <input
-              id="file-input"
-              type="file"
-              accept=".pdf,.docx,.doc,.txt,.jpg,.jpeg,.png"
-              className="hidden"
-              onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
-            />
-            <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 font-display text-lg font-semibold text-foreground">
-              Arraste o documento do cliente aqui
-            </h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              A IA vai extrair automaticamente os dados (PDF, DOCX, TXT, imagens)
+    <ResizablePanelGroup direction="horizontal" className="min-h-[600px] rounded-xl border border-border">
+      {/* Left panel: Form */}
+      <ResizablePanel defaultSize={50} minSize={35}>
+        <div className="h-full overflow-y-auto p-6">
+          <div className="mb-6">
+            <h2 className="font-display text-2xl font-bold text-foreground">
+              Dados do Contrato
+            </h2>
+            <p className="mt-1 text-muted-foreground">
+              Preencha os campos necessários ou faça upload de um documento
             </p>
           </div>
 
-          {/* Manual entry button */}
-          <div className="mt-6 text-center">
-            <Button variant="outline" onClick={openManualEntry} className="gap-2">
-              <User className="h-4 w-4" />
-              Preencher Manualmente
-            </Button>
-          </div>
-        </motion.div>
-      ) : (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          {/* File info bar */}
-          {uploadedFile && (
-            <div className="mb-6 rounded-xl border border-border bg-card p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <FileText className="h-8 w-8 text-primary" />
-                  <div>
-                    <p className="truncate font-medium text-foreground">{uploadedFile.name}</p>
-                    <p className="text-sm text-muted-foreground">{(uploadedFile.size / 1024).toFixed(1)} KB</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {extractionError && (
-                    <Button variant="outline" size="sm" onClick={retryExtraction} className="gap-2">
-                      <RefreshCw className="h-4 w-4" />
-                      Tentar Novamente
-                    </Button>
-                  )}
-                  <Button variant="ghost" size="sm" onClick={removeFile}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
+          {!showForm ? (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+              {/* Upload area */}
+              <div
+                className={cn("upload-area", isDragOver && "dragover")}
+                onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                onDragLeave={() => setIsDragOver(false)}
+                onDrop={handleDrop}
+                onClick={() => document.getElementById("file-input")?.click()}
+              >
+                <input
+                  id="file-input"
+                  type="file"
+                  accept=".pdf,.docx,.doc,.txt,.jpg,.jpeg,.png"
+                  className="hidden"
+                  onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+                />
+                <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
+                <h3 className="mt-4 font-display text-lg font-semibold text-foreground">
+                  Arraste o documento do cliente aqui
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  A IA vai extrair automaticamente os dados (PDF, DOCX, TXT, imagens)
+                </p>
               </div>
-              {extractionError && (
-                <div className="mt-3 flex items-start gap-2 text-sm text-destructive">
-                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                  <span>{extractionError}</span>
+
+              {/* Manual entry button */}
+              <div className="mt-6 text-center">
+                <Button variant="outline" onClick={openManualEntry} className="gap-2">
+                  <User className="h-4 w-4" />
+                  Preencher Manualmente
+                </Button>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              {/* File info bar */}
+              {uploadedFile && (
+                <div className="mb-6 rounded-xl border border-border bg-card p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-8 w-8 text-primary" />
+                      <div>
+                        <p className="truncate font-medium text-foreground">{uploadedFile.name}</p>
+                        <p className="text-sm text-muted-foreground">{(uploadedFile.size / 1024).toFixed(1)} KB</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {extractionError && (
+                        <Button variant="outline" size="sm" onClick={retryExtraction} className="gap-2">
+                          <RefreshCw className="h-4 w-4" />
+                          Tentar Novamente
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="sm" onClick={removeFile}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  {extractionError && (
+                    <div className="mt-3 flex items-start gap-2 text-sm text-destructive">
+                      <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                      <span>{extractionError}</span>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
 
-          {/* Back to upload */}
-          {!uploadedFile && (
-            <div className="mb-4 flex justify-end">
-              <Button variant="ghost" size="sm" onClick={() => { setShowForm(false); setExtractedFields(null); }}>
-                <Upload className="h-4 w-4 mr-2" />
-                Upload de documento
-              </Button>
-            </div>
-          )}
-
-          {/* Loading skeleton */}
-          {isExtracting ? (
-            <div className="space-y-4 rounded-xl border border-border bg-card p-6">
-              <h3 className="font-display font-semibold text-foreground">Analisando documento com IA...</h3>
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="space-y-2">
-                  <div className="h-4 w-20 animate-shimmer rounded" />
-                  <div className="h-10 w-full animate-shimmer rounded" />
+              {/* Back to upload */}
+              {!uploadedFile && (
+                <div className="mb-4 flex justify-end">
+                  <Button variant="ghost" size="sm" onClick={() => { setShowForm(false); setExtractedFields(null); }}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload de documento
+                  </Button>
                 </div>
-              ))}
-            </div>
-          ) : (
-            renderDynamicForm()
+              )}
+
+              {/* Loading skeleton */}
+              {isExtracting ? (
+                <div className="space-y-4 rounded-xl border border-border bg-card p-6">
+                  <h3 className="font-display font-semibold text-foreground">Analisando documento com IA...</h3>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="space-y-2">
+                      <div className="h-4 w-20 animate-shimmer rounded" />
+                      <div className="h-10 w-full animate-shimmer rounded" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                renderDynamicForm()
+              )}
+            </motion.div>
           )}
-        </motion.div>
-      )}
-    </div>
+        </div>
+      </ResizablePanel>
+
+      <ResizableHandle withHandle />
+
+      {/* Right panel: Live preview */}
+      <ResizablePanel defaultSize={50} minSize={30}>
+        <ContractLivePreview template={selectedTemplate} clientData={clientData} />
+      </ResizablePanel>
+    </ResizablePanelGroup>
   );
 }
