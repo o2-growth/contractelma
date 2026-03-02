@@ -3,7 +3,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import type { Product } from "../ContractWizard";
+
+export interface Product {
+  id: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  discount: number;
+  total: number;
+}
 import { cn } from "@/lib/utils";
 
 interface ProductsEditorProps {

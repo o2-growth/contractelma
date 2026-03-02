@@ -3,8 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { WizardStepper } from "./WizardStepper";
 import { TemplateSelection } from "./steps/TemplateSelection";
 import { ClientDataImport } from "./steps/ClientDataImport";
-import { ProductsEditor } from "./steps/ProductsEditor";
-import { PaymentTerms } from "./steps/PaymentTerms";
 import { ContractPreview } from "./steps/ContractPreview";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -12,9 +10,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 const steps = [
   { id: 1, name: "Template" },
   { id: 2, name: "Dados" },
-  { id: 3, name: "Produtos" },
-  { id: 4, name: "Pagamento" },
-  { id: 5, name: "Gerar" },
+  { id: 3, name: "Gerar" },
 ];
 
 export interface Template {
@@ -27,21 +23,9 @@ export interface Template {
 
 export type ClientData = Record<string, string>;
 
-export interface Product {
-  id: string;
-  name: string;
-  quantity: number;
-  unitPrice: number;
-  discount: number;
-  total: number;
-}
-
 export interface ContractData {
   template: Template | null;
   clientData: ClientData;
-  products: Product[];
-  paymentTerms: string;
-  specialNotes: string;
 }
 
 export function ContractWizard() {
@@ -49,9 +33,6 @@ export function ContractWizard() {
   const [contractData, setContractData] = useState<ContractData>({
     template: null,
     clientData: {},
-    products: [],
-    paymentTerms: "",
-    specialNotes: "",
   });
 
   const handleTemplateSelect = useCallback((template: Template) => {
@@ -63,16 +44,8 @@ export function ContractWizard() {
     setContractData((prev) => ({ ...prev, clientData }));
   }, []);
 
-  const handleProductsChange = useCallback((products: Product[]) => {
-    setContractData((prev) => ({ ...prev, products }));
-  }, []);
-
-  const handlePaymentChange = useCallback((paymentTerms: string, specialNotes: string) => {
-    setContractData((prev) => ({ ...prev, paymentTerms, specialNotes }));
-  }, []);
-
   const goNext = () => {
-    if (currentStep < 5) setCurrentStep(currentStep + 1);
+    if (currentStep < 3) setCurrentStep(currentStep + 1);
   };
 
   const goBack = () => {
@@ -87,10 +60,6 @@ export function ContractWizard() {
         const cd = contractData.clientData;
         return (cd.CLIENTE || cd.nome || "").length > 0;
       }
-      case 3:
-        return contractData.products.length > 0;
-      case 4:
-        return contractData.paymentTerms.length > 0;
       default:
         return true;
     }
@@ -114,21 +83,6 @@ export function ContractWizard() {
           />
         );
       case 3:
-        return (
-          <ProductsEditor
-            products={contractData.products}
-            onChange={handleProductsChange}
-          />
-        );
-      case 4:
-        return (
-          <PaymentTerms
-            paymentTerms={contractData.paymentTerms}
-            specialNotes={contractData.specialNotes}
-            onChange={handlePaymentChange}
-          />
-        );
-      case 5:
         return (
           <ContractPreview
             contractData={contractData}
@@ -156,7 +110,7 @@ export function ContractWizard() {
       </AnimatePresence>
 
       {/* Navigation buttons */}
-      {currentStep < 5 && (
+      {currentStep < 3 && (
         <div className="mt-8 flex justify-between">
           <Button
             variant="outline"
