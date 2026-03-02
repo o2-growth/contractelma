@@ -45,20 +45,22 @@ export function ContractLivePreview({ template, clientData }: ContractLivePrevie
         <div className="flex justify-center py-8 px-6">
           {/* A4-style document page */}
           <div className="w-full max-w-[210mm] bg-white dark:bg-card rounded shadow-lg border border-border/50
-            px-[60px] py-[50px] min-h-[297mm]
+            px-[40px] py-[50px] min-h-[297mm] overflow-hidden
             prose prose-sm max-w-none dark:prose-invert
-            prose-headings:font-display prose-headings:text-foreground prose-headings:tracking-tight
-            prose-h1:text-xl prose-h1:font-bold prose-h1:text-center prose-h1:uppercase prose-h1:mb-6
-            prose-h2:text-lg prose-h2:font-semibold prose-h2:border-b prose-h2:border-border prose-h2:pb-1 prose-h2:mb-4
-            prose-h3:text-base prose-h3:font-semibold
+            prose-headings:font-display prose-headings:tracking-tight
+            prose-h1:text-2xl prose-h1:font-bold prose-h1:text-center prose-h1:uppercase prose-h1:mb-8 prose-h1:text-foreground
+            prose-h2:text-base prose-h2:font-bold prose-h2:text-rose-600 prose-h2:uppercase prose-h2:border-b-2 prose-h2:border-rose-600 prose-h2:pb-1 prose-h2:mb-4 prose-h2:mt-6
+            prose-h3:text-sm prose-h3:font-semibold prose-h3:text-foreground
             prose-p:text-foreground prose-p:leading-relaxed prose-p:text-[13px] prose-p:mb-3
+            [&_table]:w-full [&_table]:table-fixed
             prose-table:border prose-table:border-border prose-table:text-[12px]
-            prose-thead:bg-muted/60
-            prose-th:border prose-th:border-border prose-th:p-2 prose-th:text-left prose-th:font-semibold prose-th:text-foreground
+            prose-thead:bg-slate-600 prose-thead:text-white
+            prose-th:border prose-th:border-border prose-th:p-2 prose-th:text-left prose-th:font-bold prose-th:text-white prose-th:uppercase prose-th:text-[11px]
             prose-td:border prose-td:border-border prose-td:p-2
-            prose-hr:border-border prose-hr:my-6
+            prose-hr:border-transparent prose-hr:my-4 prose-hr:opacity-0
             prose-strong:text-primary prose-strong:font-semibold
             prose-li:text-[13px] prose-li:text-foreground
+            [word-break:break-word]
           ">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
