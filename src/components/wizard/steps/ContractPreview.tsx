@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Download, FileText, Loader2, AlertCircle } from "lucide-react";
+import { Download, FileText, Loader2, AlertCircle, Send } from "lucide-react";
+import { SendToSignature } from "./SendToSignature";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import type { ContractData } from "../ContractWizard";
@@ -273,13 +274,19 @@ _______________________________
           </div>
 
           {isGenerated && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center text-sm text-success"
-            >
-              🎉 Contrato gerado com sucesso!
-            </motion.p>
+            <>
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center text-sm text-success"
+              >
+                🎉 Contrato gerado com sucesso!
+              </motion.p>
+              <SendToSignature
+                contractName={contractData.template?.name || "Contrato"}
+                contractContent={generatedContent || ""}
+              />
+            </>
           )}
         </motion.div>
       </div>
