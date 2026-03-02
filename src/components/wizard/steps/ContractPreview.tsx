@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Download, FileText, Loader2, Check, AlertCircle } from "lucide-react";
+import { Download, FileText, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { ContractData } from "../ContractWizard";
 import { cn } from "@/lib/utils";
@@ -17,15 +16,6 @@ export function ContractPreview({ contractData }: ContractPreviewProps) {
   const [generatedContent, setGeneratedContent] = useState<string | null>(null);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
-  };
-
-  const totalGeral = contractData.products.reduce((sum, p) => sum + p.total, 0);
 
   const generateContractLocally = () => {
     const template = contractData.template?.content || getDefaultTemplate();
@@ -43,28 +33,6 @@ export function ContractPreview({ contractData }: ContractPreviewProps) {
 
 ---
 
-## OBJETO DO CONTRATO
-
-O presente contrato tem por objeto a prestação dos seguintes serviços/produtos:
-
-{{PRODUTOS}}
-
----
-
-## FORMA DE PAGAMENTO
-
-{{FORMA_PAGAMENTO}}
-
-**Valor Total:** {{VALOR_TOTAL}}
-
----
-
-## OBSERVAÇÕES
-
-{{OBSERVACOES}}
-
----
-
 ## DATA E ASSINATURA
 
 {{DATA}}
@@ -77,13 +45,6 @@ _______________________________
 **Contratado**
 `;
 
-  const formatCurrencyForTemplate = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
-  };
-
   const formatDate = (date: Date) => {
     return date.toLocaleDateString("pt-BR", {
       day: "2-digit",
@@ -92,44 +53,18 @@ _______________________________
     });
   };
 
-  const generateProductsTable = () => {
-    if (contractData.products.length === 0) return "";
-    
-    let table = "\n| Item | Quantidade | Valor Unit. | Desconto | Total |\n";
-    table += "|------|-----------|-------------|----------|-------|\n";
-    
-    contractData.products.forEach((product) => {
-      table += `| ${product.name} | ${product.quantity} | ${formatCurrencyForTemplate(product.unitPrice)} | ${product.discount}% | ${formatCurrencyForTemplate(product.total)} |\n`;
-    });
-    
-    const total = contractData.products.reduce((sum, p) => sum + p.total, 0);
-    table += `| **TOTAL** | | | | **${formatCurrencyForTemplate(total)}** |\n`;
-    
-    return table;
-  };
-
   const replacePlaceholders = (template: string, data: ContractData) => {
-    const totalValue = data.products.reduce((sum, p) => sum + p.total, 0);
-    const productsTable = generateProductsTable();
-
-    // Auto-filled replacements
     const autoReplacements: Record<string, string> = {
-      PRODUTOS: productsTable,
-      VALOR_TOTAL: formatCurrencyForTemplate(totalValue),
-      FORMA_PAGAMENTO: data.paymentTerms || "",
-      OBSERVACOES: data.specialNotes || "",
       DATA: formatDate(new Date()),
     };
 
     let result = template;
 
-    // Replace auto-filled variables
     for (const [key, value] of Object.entries(autoReplacements)) {
       result = result.split(`{{${key}}}`).join(value);
       result = result.split(`{{${key.toLowerCase()}}}`).join(value);
     }
 
-    // Replace all dynamic client data variables
     for (const [key, value] of Object.entries(data.clientData)) {
       result = result.split(`{{${key}}}`).join(value);
       result = result.split(`{{${key.toUpperCase()}}}`).join(value);
@@ -139,18 +74,15 @@ _______________________________
     return result;
   };
 
-  const handleGenerate = async (_format: "docx" | "pdf" | "both") => {
+  const handleGenerate = async () => {
     setIsGenerating(true);
     setError(null);
 
     try {
-      // Generate contract locally - no auth required
       const content = generateContractLocally();
-      
       setGeneratedContent(content);
       setDownloadUrl("local");
       setIsGenerated(true);
-      
       toast.success("Contrato gerado com sucesso!", {
         description: "Clique em baixar para salvar o arquivo.",
       });
@@ -176,9 +108,12 @@ _______________________________
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-
     toast.success("Download iniciado!");
   };
+
+  const clientName = contractData.clientData.CLIENTE || contractData.clientData.nome || "[NOME DO CLIENTE]";
+  const clientDoc = contractData.clientData.CNPJ || contractData.clientData.CPF || "[CNPJ/CPF]";
+  const clientAddress = contractData.clientData.ENDERECO_COMPLETO || contractData.clientData.ENDERECO_EMPRESA || "[ENDEREÇO]";
 
   return (
     <div>
@@ -192,7 +127,6 @@ _______________________________
       </div>
 
       <div className="grid gap-8 lg:grid-cols-3">
-        {/* Contract preview */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -214,78 +148,43 @@ _______________________________
               <p className="mt-6 text-justify leading-relaxed">
                 Pelo presente instrumento particular, de um lado{" "}
                 <span className="rounded bg-highlight px-1 font-semibold">
-                  {contractData.clientData.CLIENTE || contractData.clientData.nome || "[NOME DO CLIENTE]"}
+                  {clientName}
                 </span>
                 , inscrito no CNPJ/CPF sob o nº{" "}
                 <span className="rounded bg-highlight px-1 font-mono">
-                  {contractData.clientData.CNPJ || contractData.clientData.CPF || "[CNPJ/CPF]"}
+                  {clientDoc}
                 </span>
                 , com sede/domicílio em{" "}
                 <span className="rounded bg-highlight px-1">
-                  {contractData.clientData.ENDERECO_COMPLETO || contractData.clientData.ENDERECO_EMPRESA || "[ENDEREÇO]"}
+                  {clientAddress}
                 </span>
                 , doravante denominado CONTRATANTE...
               </p>
 
+              {/* Display all filled client data */}
               <h2 className="mt-8 font-display text-lg font-semibold">
-                Cláusula 2ª - Do Objeto
+                Dados Preenchidos
               </h2>
-
-              {contractData.products.length > 0 && (
-                <div className="my-4 rounded-lg border border-border overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted">
-                      <tr>
-                        <th className="px-4 py-2 text-left font-medium">Item</th>
-                        <th className="px-4 py-2 text-center font-medium">Qtd</th>
-                        <th className="px-4 py-2 text-right font-medium">Valor</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {contractData.products.map((product, i) => (
-                        <tr key={product.id} className={i % 2 === 1 ? "bg-muted/30" : ""}>
-                          <td className="px-4 py-2">{product.name}</td>
-                          <td className="px-4 py-2 text-center">{product.quantity}</td>
-                          <td className="px-4 py-2 text-right font-mono">
-                            {formatCurrency(product.total)}
-                          </td>
+              <div className="my-4 rounded-lg border border-border overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted">
+                    <tr>
+                      <th className="px-4 py-2 text-left font-medium">Campo</th>
+                      <th className="px-4 py-2 text-left font-medium">Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {Object.entries(contractData.clientData)
+                      .filter(([, value]) => value.length > 0)
+                      .map(([key, value], i) => (
+                        <tr key={key} className={i % 2 === 1 ? "bg-muted/30" : ""}>
+                          <td className="px-4 py-2 font-medium">{key}</td>
+                          <td className="px-4 py-2">{value}</td>
                         </tr>
                       ))}
-                    </tbody>
-                    <tfoot className="border-t-2 border-border bg-muted">
-                      <tr>
-                        <td colSpan={2} className="px-4 py-2 font-semibold">Total</td>
-                        <td className="px-4 py-2 text-right font-mono font-bold">
-                          <span className="rounded bg-highlight px-1">
-                            {formatCurrency(totalGeral)}
-                          </span>
-                        </td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              )}
-
-              <h2 className="mt-8 font-display text-lg font-semibold">
-                Cláusula 3ª - Do Pagamento
-              </h2>
-              
-              {contractData.paymentTerms && (
-                <p className="rounded bg-highlight/50 p-2">
-                  {contractData.paymentTerms}
-                </p>
-              )}
-
-              {contractData.specialNotes && (
-                <>
-                  <h2 className="mt-8 font-display text-lg font-semibold">
-                    Observações
-                  </h2>
-                  <p className="rounded bg-highlight/50 p-2">
-                    {contractData.specialNotes}
-                  </p>
-                </>
-              )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </motion.div>
@@ -297,12 +196,10 @@ _______________________________
           transition={{ delay: 0.1 }}
           className="space-y-6"
         >
-          {/* Summary card */}
           <div className="rounded-xl border border-border bg-card p-6">
             <h3 className="font-display font-semibold text-foreground mb-4">
               Resumo
             </h3>
-
             <div className="space-y-4 text-sm">
               <div>
                 <span className="text-muted-foreground">Cliente:</span>
@@ -310,31 +207,21 @@ _______________________________
                   {contractData.clientData.CLIENTE || contractData.clientData.nome || "-"}
                 </p>
               </div>
-
               <div>
                 <span className="text-muted-foreground">Template:</span>
                 <p className="font-medium text-foreground">
                   {contractData.template?.name || "-"}
                 </p>
               </div>
-
               <div>
-                <span className="text-muted-foreground">Produtos:</span>
+                <span className="text-muted-foreground">Campos preenchidos:</span>
                 <p className="font-medium text-foreground">
-                  {contractData.products.length} itens
-                </p>
-              </div>
-
-              <div className="border-t border-border pt-4">
-                <span className="text-muted-foreground">Total:</span>
-                <p className="font-mono text-2xl font-bold text-foreground">
-                  {formatCurrency(totalGeral)}
+                  {Object.values(contractData.clientData).filter(v => v.length > 0).length}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Error state */}
           {error && (
             <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
               <div className="flex items-start gap-2">
@@ -347,11 +234,10 @@ _______________________________
             </div>
           )}
 
-          {/* Download buttons */}
           <div className="space-y-3">
             {!isGenerated ? (
               <Button
-                onClick={() => handleGenerate("both")}
+                onClick={handleGenerate}
                 disabled={isGenerating}
                 className="w-full gap-2"
               >
