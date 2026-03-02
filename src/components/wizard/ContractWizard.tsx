@@ -94,7 +94,7 @@ export function ContractWizard() {
   };
 
   return (
-    <div className={`mx-auto ${currentStep === 2 ? "max-w-7xl" : "max-w-5xl"}`}>
+    <div className={`mx-auto ${currentStep === 2 ? "max-w-[1400px]" : "max-w-5xl"}`}>
       <WizardStepper steps={steps} currentStep={currentStep} />
 
       <AnimatePresence mode="wait">
