@@ -1,26 +1,18 @@
 
 
-# Corrigir Preview para parecer com o documento Word
+# Fix: Enable Typography Plugin and Refine Document Preview
 
-## Problemas comparando Word vs Preview atual
+## Root Cause
+The `@tailwindcss/typography` plugin is installed (`package.json`) but **not registered** in `tailwind.config.ts` plugins array. All `prose-*` classes are silently ignored -- headings render as plain text, tables have no styling, and the document looks nothing like Word.
 
-1. **Conteúdo transborda a página** — texto e tabelas saem da área do documento, sem overflow controlado
-2. **Títulos sem cor** — no Word, H2 ("Contratante", "Contratada", seções) são vermelho/rosa; no preview são apenas preto
-3. **Tabela sem cabeçalho colorido** — no Word, "CONDIÇÕES DO CONTRATO" tem fundo azul/cinza; no preview é plain
-4. **H1 precisa ser maior e mais destacado** — título principal ("O2 INC" / "SAAS OXY + GÊNIO") precisa de mais peso
-5. **`---` (hr) não deveria aparecer como linha** — no Word são apenas espaçamentos entre seções
+## Changes
 
-## Alterações
+### 1. `tailwind.config.ts`
+- Add `require("@tailwindcss/typography")` to the `plugins` array alongside `tailwindcss-animate`
 
-### `src/components/wizard/steps/ContractLivePreview.tsx`
-- Adicionar `overflow-hidden` no container do documento A4 para impedir transbordamento
-- Estilizar `prose-h2` com **cor vermelha/rosa** (como no Word: `text-rose-600`) e sublinhado
-- Estilizar `prose-h1` com tamanho maior (`text-2xl`) e mais espaçamento
-- Tabelas: `w-full table-fixed` para forçar caber na página
-- `prose-hr` invisível ou apenas espaçamento (`opacity-0` ou `border-transparent`)
-- Reduzir padding lateral para `px-[40px]` para dar mais espaço ao conteúdo
-- Adicionar `word-break: break-word` para parágrafos longos não transbordarem
+### 2. `src/components/wizard/steps/ContractLivePreview.tsx`
+- No structural changes needed -- the existing prose classes should work once the plugin is active
+- Minor tweaks if needed after testing (the classes already target h1, h2, tables, etc. correctly)
 
-### `src/components/wizard/steps/ClientDataImport.tsx`
-- Sem alterações estruturais (proporção 35/65 já está correta)
+This single fix should make all the existing styling take effect: rose-colored H2 headings, dark table headers, proper font sizes, centered H1, invisible `<hr>` separators, and the overall document appearance.
 
