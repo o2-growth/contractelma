@@ -237,7 +237,7 @@ export function ClientDataImport({ clientData, onChange, selectedTemplate }: Cli
   return (
     <ResizablePanelGroup direction="horizontal" className="min-h-[600px] rounded-xl border border-border">
       {/* Left panel: Form */}
-      <ResizablePanel defaultSize={50} minSize={35}>
+      <ResizablePanel defaultSize={35} minSize={25}>
         <div className="h-full overflow-y-auto p-6">
           <div className="mb-6">
             <h2 className="font-display text-2xl font-bold text-foreground">
@@ -348,7 +348,7 @@ export function ClientDataImport({ clientData, onChange, selectedTemplate }: Cli
       <ResizableHandle withHandle />
 
       {/* Right panel: Live preview */}
-      <ResizablePanel defaultSize={50} minSize={30}>
+      <ResizablePanel defaultSize={65} minSize={35}>
         <ContractLivePreview template={selectedTemplate} clientData={clientData} />
       </ResizablePanel>
     </ResizablePanelGroup>
