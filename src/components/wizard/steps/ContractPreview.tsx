@@ -111,37 +111,31 @@ _______________________________
   const replacePlaceholders = (template: string, data: ContractData) => {
     const totalValue = data.products.reduce((sum, p) => sum + p.total, 0);
     const productsTable = generateProductsTable();
-    
-    const replacements: Record<string, string> = {
-      "{{cliente}}": data.clientData.nome || "",
-      "{{CLIENTE}}": data.clientData.nome || "",
-      "{{nome}}": data.clientData.nome || "",
-      "{{NOME}}": data.clientData.nome || "",
-      "{{cpf}}": data.clientData.cpf || "",
-      "{{CPF}}": data.clientData.cpf || "",
-      "{{endereco}}": data.clientData.endereco || "",
-      "{{ENDERECO}}": data.clientData.endereco || "",
-      "{{telefone}}": data.clientData.telefone || "",
-      "{{TELEFONE}}": data.clientData.telefone || "",
-      "{{email}}": data.clientData.email || "",
-      "{{EMAIL}}": data.clientData.email || "",
-      "{{produtos}}": productsTable,
-      "{{PRODUTOS}}": productsTable,
-      "{{valor_total}}": formatCurrencyForTemplate(totalValue),
-      "{{VALOR_TOTAL}}": formatCurrencyForTemplate(totalValue),
-      "{{forma_pagamento}}": data.paymentTerms || "",
-      "{{FORMA_PAGAMENTO}}": data.paymentTerms || "",
-      "{{observacoes}}": data.specialNotes || "",
-      "{{OBSERVACOES}}": data.specialNotes || "",
-      "{{data}}": formatDate(new Date()),
-      "{{DATA}}": formatDate(new Date()),
+
+    // Auto-filled replacements
+    const autoReplacements: Record<string, string> = {
+      PRODUTOS: productsTable,
+      VALOR_TOTAL: formatCurrencyForTemplate(totalValue),
+      FORMA_PAGAMENTO: data.paymentTerms || "",
+      OBSERVACOES: data.specialNotes || "",
+      DATA: formatDate(new Date()),
     };
-    
+
     let result = template;
-    for (const [placeholder, value] of Object.entries(replacements)) {
-      result = result.split(placeholder).join(value);
+
+    // Replace auto-filled variables
+    for (const [key, value] of Object.entries(autoReplacements)) {
+      result = result.split(`{{${key}}}`).join(value);
+      result = result.split(`{{${key.toLowerCase()}}}`).join(value);
     }
-    
+
+    // Replace all dynamic client data variables
+    for (const [key, value] of Object.entries(data.clientData)) {
+      result = result.split(`{{${key}}}`).join(value);
+      result = result.split(`{{${key.toUpperCase()}}}`).join(value);
+      result = result.split(`{{${key.toLowerCase()}}}`).join(value);
+    }
+
     return result;
   };
 
@@ -177,7 +171,7 @@ _______________________________
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `contrato_${contractData.clientData.nome.replace(/\s+/g, "_")}_${Date.now()}.md`;
+    link.download = `contrato_${(contractData.clientData.CLIENTE || contractData.clientData.nome || "cliente").replace(/\s+/g, "_")}_${Date.now()}.md`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -220,23 +214,15 @@ _______________________________
               <p className="mt-6 text-justify leading-relaxed">
                 Pelo presente instrumento particular, de um lado{" "}
                 <span className="rounded bg-highlight px-1 font-semibold">
-                  {contractData.clientData.nome || "[NOME DO CLIENTE]"}
+                  {contractData.clientData.CLIENTE || contractData.clientData.nome || "[NOME DO CLIENTE]"}
                 </span>
-                , inscrito no CPF sob o nº{" "}
+                , inscrito no CNPJ/CPF sob o nº{" "}
                 <span className="rounded bg-highlight px-1 font-mono">
-                  {contractData.clientData.cpf || "[CPF]"}
+                  {contractData.clientData.CNPJ || contractData.clientData.CPF || "[CNPJ/CPF]"}
                 </span>
-                , residente e domiciliado em{" "}
+                , com sede/domicílio em{" "}
                 <span className="rounded bg-highlight px-1">
-                  {contractData.clientData.endereco || "[ENDEREÇO]"}
-                </span>
-                , telefone{" "}
-                <span className="rounded bg-highlight px-1 font-mono">
-                  {contractData.clientData.telefone || "[TELEFONE]"}
-                </span>
-                , e-mail{" "}
-                <span className="rounded bg-highlight px-1">
-                  {contractData.clientData.email || "[E-MAIL]"}
+                  {contractData.clientData.ENDERECO_COMPLETO || contractData.clientData.ENDERECO_EMPRESA || "[ENDEREÇO]"}
                 </span>
                 , doravante denominado CONTRATANTE...
               </p>
@@ -321,7 +307,7 @@ _______________________________
               <div>
                 <span className="text-muted-foreground">Cliente:</span>
                 <p className="font-medium text-foreground">
-                  {contractData.clientData.nome || "-"}
+                  {contractData.clientData.CLIENTE || contractData.clientData.nome || "-"}
                 </p>
               </div>
 
