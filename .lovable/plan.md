@@ -1,24 +1,29 @@
 
 
-# Fix: PDF sent to Autentique appears blank/garbled
+# Melhorar formatação do PDF gerado
 
-## Problem
-The `generateSimplePdf` function in the edge function has two critical bugs:
+## Situação
+O PDF está sendo gerado como texto puro -- sem negrito, sem tabelas formatadas, sem hierarquia visual. As tabelas markdown aparecem como pipes (`|`) e as linhas horizontais como `---`.
 
-1. **Broken text positioning**: Uses `Td` (relative positioning) but treats values as absolute coordinates. After the first line, every subsequent line jumps to wrong positions, making most text invisible (off-page).
-2. **UTF-8 encoding issue**: Uses `/Encoding /WinAnsiEncoding` with Helvetica but writes raw UTF-8 bytes. Portuguese characters (ã, ê, í, ç) get corrupted or lost.
+## Abordagem
+Não precisa criar template no Autentique. Vamos melhorar o `generateSimplePdf` no edge function para produzir um PDF com formatação visual adequada.
 
-## Fix
+## Mudanças em `supabase/functions/send-to-autentique/index.ts`
 
-### `supabase/functions/send-to-autentique/index.ts`
+Reescrever o gerador de PDF para suportar:
 
-Rewrite `generateSimplePdf` to:
-- Use **absolute positioning** via `BT ... Tf ... Td(once) ... Tj ... ET` per line, or use `Tm` for absolute text matrix
-- Convert UTF-8 Portuguese characters to their WinAnsiEncoding byte equivalents (e.g., `ã` = `\xe3`, `ç` = `\xe7`)
-- Word-wrap long lines properly (current code truncates at 100 chars)
-- Fix the content stream so each line renders at the correct Y coordinate
+1. **Títulos (H1/H2)**: Renderizar em fonte maior (14-16pt) e bold (`Helvetica-Bold`)
+2. **Negrito**: Detectar `**texto**` e alternar para `Helvetica-Bold` inline
+3. **Tabelas**: Parsear linhas com `|` e renderizar como tabela com bordas (retângulos PDF) e colunas alinhadas
+4. **Linhas horizontais** (`---`): Desenhar uma linha (`stroke`) ao invés de texto
+5. **Bullet points**: Já funciona parcialmente, manter o `•` mas com indentação correta
+6. **Espaçamento**: Adicionar mais espaço antes de títulos e entre seções
 
-The key change in the stream building loop: position each line absolutely instead of using cumulative relative moves.
+### Recursos PDF necessários
+- Registrar duas fontes: `/F1` (Helvetica) e `/F2` (Helvetica-Bold)
+- Usar operadores `re` (retângulo) e `S` (stroke) para bordas de tabela
+- Usar operador `l` + `S` para linhas horizontais
 
-After fixing, redeploy the edge function.
+### Redeploy
+Após as mudanças, redeployar a edge function.
 
