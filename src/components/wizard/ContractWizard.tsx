@@ -25,13 +25,7 @@ export interface Template {
   content?: string;
 }
 
-export interface ClientData {
-  nome: string;
-  cpf: string;
-  endereco: string;
-  telefone: string;
-  email: string;
-}
+export type ClientData = Record<string, string>;
 
 export interface Product {
   id: string;
@@ -50,26 +44,18 @@ export interface ContractData {
   specialNotes: string;
 }
 
-const initialClientData: ClientData = {
-  nome: "",
-  cpf: "",
-  endereco: "",
-  telefone: "",
-  email: "",
-};
-
 export function ContractWizard() {
   const [currentStep, setCurrentStep] = useState(1);
   const [contractData, setContractData] = useState<ContractData>({
     template: null,
-    clientData: initialClientData,
+    clientData: {},
     products: [],
     paymentTerms: "",
     specialNotes: "",
   });
 
   const handleTemplateSelect = useCallback((template: Template) => {
-    setContractData((prev) => ({ ...prev, template }));
+    setContractData((prev) => ({ ...prev, template, clientData: {} }));
     setCurrentStep(2);
   }, []);
 
@@ -97,8 +83,10 @@ export function ContractWizard() {
     switch (currentStep) {
       case 1:
         return contractData.template !== null;
-      case 2:
-        return contractData.clientData.nome.length > 0;
+      case 2: {
+        const cd = contractData.clientData;
+        return (cd.CLIENTE || cd.nome || "").length > 0;
+      }
       case 3:
         return contractData.products.length > 0;
       case 4:
@@ -122,6 +110,7 @@ export function ContractWizard() {
           <ClientDataImport
             clientData={contractData.clientData}
             onChange={handleClientDataChange}
+            selectedTemplate={contractData.template}
           />
         );
       case 3:
