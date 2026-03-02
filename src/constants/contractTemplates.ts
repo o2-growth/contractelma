@@ -7,78 +7,185 @@ export const defaultTemplates: Template[] = [
     name: "CFO Enterprise",
     description: "Assessoria de Gestão Financeira Recorrente - CFO as a Service",
     createdAt: "Modelo do sistema",
-    content: `# INSTRUMENTO PARTICULAR DE PRESTAÇÃO DE SERVIÇOS
+    content: `# CFO AS A SERVICE
 
-Pelo presente instrumento:
+## Contratante
 
-**{{CLIENTE}}**, sociedade empresária limitada, inscrita no CNPJ sob o nº **{{CNPJ}}**, com sede na **{{ENDERECO_EMPRESA}}** representada neste ato na forma de seu contrato social, por seu sócio **{{SOCIO}}**, brasileiro, empresário, inscrito no CPF sob número **{{CPF}}**, residente e domiciliado na **{{ENDERECO_SOCIO}}**, doravante referida simplesmente como "CONTRATANTE", e de outro lado;
+{{CLIENTE}}, pessoa jurídica de direito privado, inscrita no CNPJ sob nº {{CNPJ}}, com sede na {{ENDERECO_EMPRESA}}, neste ato representada por seu(ua) representante legal, {{SOCIO}}, brasileiro(a), inscrito(a) no CPF sob nº {{CPF}}, doravante designado CONTRATANTE.
 
-**O2 INC GESTÃO E TECNOLOGIA S.A.**, sociedade anônima, com sede na cidade de São Paulo, Estado de São Paulo, na Avenida Brigadeiro Faria Lima, 1811, bairro Jardim Paulista, CEP 01452-001, inscrita no Cadastro Nacional de Pessoa Jurídica – CNPJ sob o nº 23.813.779/0001-60, neste ato representada na forma de seu Estatuto Social, doravante denominada simplesmente "CONTRATADA".
+## Contratada
 
-As Partes acima qualificadas resolvem, de comum acordo, celebrar o presente INSTRUMENTO PARTICULAR DE PRESTAÇÃO DE SERVIÇOS, conforme as cláusulas e condições abaixo previstas.
+O2 INC GESTÃO E TECNOLOGIA S.A., sociedade anônima, inscrita no CNPJ sob nº 23.813.779/0001-60, com sede na Avenida Brigadeiro Faria Lima, 1811, bairro Jardim Paulista, CEP 01452-001, São Paulo/SP, endereço de e-mail cs@o2inc.com.br, doravante designada CONTRATADA.
 
 ---
 
-## CLÁUSULA PRIMEIRA - DO OBJETO
+## CONDIÇÕES DO CONTRATO CFO AS A SERVICE
 
-1.1 – A CONTRATADA presta serviços de Assessoria de Gestão Financeira Recorrente, no modelo de **CFO AS A SERVICE**, conforme detalhamento de escopo abaixo.
+| Item | Condição |
+|------|----------|
+| Valor do SETUP | R$ {{VALOR_SETUP}} em 12x de R$ {{VALOR_PARCELA_SETUP}} |
+| Pagamento SETUP | Cartão de Crédito (link de pagamento) |
+| Mensalidade CFO as a Service | R$ {{VALOR_MENSALIDADE}} /mês |
+| Pagamento Mensalidade | Boleto Bancário |
+| Primeiro pagamento mensalidade | 30 dias após assinatura |
+| Vigência | 12 meses (renovação automática) |
+| Aviso prévio para cancelamento | {{AVISO_PREVIO_DIAS}} dias |
+| Data de início do projeto | {{DATA}} |
 
-### 1.1.1 - Etapa de SETUP
+---
+
+## DESCRITIVO DO SERVIÇO
+
+### Módulo: SETUP
 
 **Duração:** até 90 dias após o kick-off
 
-**Encontros:** Touch point semanal, podendo ser reunião ou contato telefônico/whatsapp
+**Encontros:** Touch point semanal (reunião ou contato telefônico/WhatsApp)
 
-**Encontros obrigatórios:** 4 encontros iniciais para entrevistas, questionamentos e compreensão do funcionamento dos processos geradores de dados da empresa.
+**Encontros obrigatórios:** 4 encontros iniciais para entrevistas e compreensão dos processos
 
-### Entregáveis
+### Entregáveis do SETUP
 
-| Item | Descrição |
-|------|-----------|
-| a) PLANO DE CONTAS | Análise do Plano de Contas atual; Identificação de otimizações e melhorias; Sugestão de mudanças; Suporte técnico e instrutivo ao time do cliente |
-| b) DADOS | Aplicação do check list dos principais processos geradores de dados da empresa; Compreensão e entrevista dos processos de Faturamento, Contas a Receber, Compras/Custos/Despesas, Contas a Pagar e Conciliação bancária |
-| c) ERP | Análise do ERP; Identificação dos pré requisitos; Identificação de eventuais pontos de atenção; Análise de possíveis sub-utilizações do sistema |
-| d) TECNOLOGIA | Análise técnica do sistema ERP do cliente; Definição da modalidade de integração; Alinhamento de Plano de contas ERP -> Oxy |
+- a) PLANO DE CONTAS
+  - Análise do Plano de Contas atual
+  - Identificação de otimizações e melhorias
+  - Sugestão de mudanças e suporte técnico ao time
+- b) DADOS
+  - Check list dos principais processos geradores de dados
+  - Compreensão de Faturamento, Contas a Receber/Pagar, Conciliação bancária
+  - Sugestão de mudanças e suporte técnico
+- c) ERP
+  - Análise do ERP e identificação de pré-requisitos
+  - Identificação de pontos de atenção e sub-utilizações
+  - Compreensão de possíveis melhorias
+- d) TECNOLOGIA
+  - Análise técnica e definição da modalidade de integração
+  - Alinhamento Plano de Contas ERP → Plataforma Oxy
+  - Integração, validação e liberação de acessos
 
-**Parágrafo Único:** Os prazos serão definidos conforme a disponibilidade de agenda da CONTRATADA e da CONTRATANTE. O prazo de 90 dias estimado para conclusão do SETUP dependerá fundamentalmente do engajamento e da participação dos sócios e da equipe da CONTRATANTE.
-
----
-
-## CLÁUSULA SEGUNDA - DA REMUNERAÇÃO
-
-2.1 – Pelos serviços ora contratados, será fixada a remuneração conforme abaixo:
-
-{{FORMA_PAGAMENTO}}
-
-**Valor Total:** {{VALOR_TOTAL}}
-
----
-
-## CLÁUSULA TERCEIRA - DO PRAZO
-
-3.1 – O presente contrato terá vigência de 12 (doze) meses, contados a partir da data de sua assinatura.
+**Diretrizes:** O prazo de 90 dias depende do engajamento da CONTRATANTE. Caso a implantação dependa de ERP ou outras ferramentas, o prazo será revisto em comum acordo.
 
 ---
 
-## OBSERVAÇÕES
+### Módulo: CFO AS A SERVICE
 
-{{OBSERVACOES}}
+**Periodicidade:** Mensal, com encontros semanais e Comitê Estratégico mensal
+
+**Pré-requisito:** Conclusão do SETUP e acesso ao curso Business Class
+
+### Serviços Inclusos
+
+- a) Organização de processos financeiros: mapeamento, identificação de melhorias e direcionamento para implementação
+- b) Organização da base de dados: garantia de dados sólidos por caixa e competência no ERP
+- c) Plano de contas gerencial: revisão ou criação com base na realidade específica do negócio
+- d) Construção e Análise do DRE: DRE Gerencial para análise de resultado mensal
+- e) Construção e Análise do Fluxo de Caixa: projeção para previsibilidade de recursos
+- f) Curva ABC de clientes e fornecedores: análise de representatividade (se aplicável)
+- g) Interlocução com a Contabilidade: apoio nos ritos de fechamento mensal
+- h) Planejamento orçamentário: elaboração de orçamento e acompanhamento vs realizado
+- i) Acompanhamento Plataforma Oxy: informações de Lucro e Caixa otimizando a gestão
+- j) Reunião semanal de alinhamento: pautas pertinentes e gestão financeira estratégica
+- k) Comitê Estratégico Mensal: apresentação dos números e discussões estratégicas
+- l) Orientação da Equipe Interna: direcionamento para seguir processos estabelecidos
+- m) Suporte na Captação de Recursos: orientação para apresentação a bancos e investidores
+- n) Suporte na Reestruturação de Passivos: análise de dívidas e estratégias de renegociação
+- o) Construção e Análise do Ciclo Financeiro: otimização do capital de giro
+
+**Diretrizes:** A CONTRATADA não gerencia colaboradores diariamente. Encontros presenciais, se aceitos, terão custos por conta da CONTRATANTE (solicitação com 60 dias de antecedência).
 
 ---
 
-## DATA E ASSINATURA
+## MASTER SERVICE AGREEMENT
 
-**Local e Data:** São Paulo, {{DATA}}
+### 1. FORMA DE PAGAMENTO
 
-_______________________________
-**CONTRATANTE:** {{CLIENTE}}
-CNPJ: {{CNPJ}}
-Representado por: {{SOCIO}}
-CPF: {{CPF}}
+1.1 O SETUP será pago via cartão de crédito, com tarifas já inclusas, por meio de link de pagamento enviado pela CONTRATADA.
 
-_______________________________
-**CONTRATADA**
-O2 INC GESTÃO E TECNOLOGIA S.A.
+1.2 A mensalidade será paga via boleto bancário, com primeiro pagamento 30 dias após assinatura.
+
+1.3 Em caso de inadimplemento: multa de 2% + juros de 1% ao mês sobre o débito.
+
+1.4 A inadimplência autoriza a suspensão dos serviços e uso de serviços de proteção ao crédito.
+
+1.5 Reajuste anual pelo IPCA ou índice substituto, na data de renovação.
+
+### 2. OBRIGAÇÕES DA CONTRATADA
+
+2.1 Prestar os serviços com os mais altos padrões profissionais, de forma diligente e eficiente.
+
+2.2 Manter sigilo absoluto sobre informações confidenciais, financeiras e estratégicas da CONTRATANTE.
+
+2.3 Prestar suporte contínuo para esclarecimentos e orientações técnicas durante a vigência.
+
+### 3. OBRIGAÇÕES DA CONTRATANTE
+
+3.1 Disponibilizar tempestivamente todas as informações necessárias para execução dos serviços.
+
+3.2 Efetuar os pagamentos nos prazos e condições estabelecidos.
+
+3.3 Assistir integralmente os cursos e materiais formativos (Business Class).
+
+3.4 Garantir presença de pelo menos um sócio nas reuniões semanais e Comitês Estratégicos.
+
+3.5 Adotar as recomendações estratégicas, operacionais e financeiras propostas.
+
+3.6 Utilizar sistemas adequados de gestão (ERP) para garantir a qualidade das entregas.
+
+### 4. CONFIDENCIALIDADE E PROTEÇÃO DE DADOS
+
+4.1 A CONTRATADA manterá sigilo absoluto sobre informações confidenciais, exceto as necessárias ao cumprimento do contrato.
+
+4.2 A CONTRATADA observará rigorosamente a Lei nº 13.709/2018 (LGPD), assegurando proteção e confidencialidade dos dados.
+
+### 5. RESCISÃO E CANCELAMENTO
+
+5.1 O SETUP é irrevogável e irretratável após assinatura, salvo descumprimento contratual.
+
+5.2 Em caso de descumprimento pela CONTRATANTE, a CONTRATADA terá direito ao valor integral do SETUP, disponibilizando as entregas desenvolvidas.
+
+5.3 O CFO as a Service pode ser rescindido por qualquer parte mediante aviso prévio de {{AVISO_PREVIO_DIAS}} dias, formalizado por e-mail para cs@o2inc.com.br.
+
+5.4 A rescisão não afeta direitos legais disponíveis nem obrigações devidas até a data, incluindo encargos pendentes.
+
+### 6. NÃO SOLICITAÇÃO
+
+6.1 Durante a vigência e por 2 anos após o término, as PARTES não contratarão ou tentarão atrair sócios, colaboradores ou prestadores da outra PARTE, salvo autorização por escrito.
+
+### 7. DISPOSIÇÕES GERAIS
+
+7.1 A invalidade de qualquer disposição não afeta as demais, que permanecerão válidas e exequíveis.
+
+7.2 Alterações só serão válidas se aprovadas por ambas as PARTES, formalizadas por escrito e assinadas.
+
+7.3 Notificações serão por: (i) Cartório de Títulos e Documentos; (ii) carta registrada; ou (iii) e-mail com comprovante de envio.
+
+7.4 Este Contrato é de natureza estritamente civil, inexistindo vínculo empregatício entre as PARTES.
+
+7.5 A prestação dos serviços configura obrigação de meio e não de resultado.
+
+7.6 As PARTES comprometem-se a não oferecer, dar ou aceitar pagamentos, doações ou vantagens que constituam prática ilegal ou de corrupção.
+
+7.7 Este Contrato é irrevogável, irretratável e representa o acordo completo entre as PARTES, substituindo entendimentos anteriores.
+
+### 8. LEI APLICÁVEL E FORO
+
+8.1 Este contrato será regido pelas leis da República Federativa do Brasil. Qualquer disputa será submetida ao Foro Central da Cidade de São Paulo - SP, com exclusão de qualquer outro.
+
+---
+
+São Paulo, {{DATA}}
+
+| CONTRATANTE | CONTRATADA |
+|-------------|------------|
+| _______________________________ | _______________________________ |
+| {{CLIENTE}} | O2 INC GESTÃO E TECNOLOGIA S.A. |
+
+### TESTEMUNHAS:
+
+| _______________________________ | _______________________________ |
+|-------------|------------|
+| Nome: | Nome: |
+| CPF: | CPF: |
 `,
   },
   {
@@ -161,70 +268,165 @@ O2 INC GESTÃO E TECNOLOGIA S.A.
     name: "SaaS Oxy + Gênio",
     description: "Plataforma Oxy com Agente de IA especializado em finanças",
     createdAt: "Modelo do sistema",
-    content: `# INSTRUMENTO PARTICULAR DE PRESTAÇÃO DE SERVIÇOS
+    content: `# SAAS OXY + GÊNIO
 
-Pelo presente instrumento:
+## Contratante
 
-**{{CLIENTE}}**, sociedade empresária limitada, inscrita no CNPJ sob o nº **{{CNPJ}}**, com sede na **{{ENDERECO_EMPRESA}}** representada neste ato na forma de seu contrato social, por seu sócio **{{SOCIO}}**, brasileiro, empresário, inscrito no CPF sob número **{{CPF}}**, residente e domiciliado na **{{ENDERECO_SOCIO}}**, doravante referida simplesmente como "CONTRATANTE", e de outro lado;
+{{CLIENTE}}, pessoa jurídica de direito privado, inscrita no CNPJ sob nº {{CNPJ}}, com sede na {{ENDERECO_EMPRESA}}, neste ato representada por seu(ua) representante legal, {{SOCIO}}, brasileiro(a), inscrito(a) no CPF sob nº {{CPF}}, doravante designado CONTRATANTE.
 
-**O2 INC GESTÃO E TECNOLOGIA S.A.**, sociedade anônima, com sede na cidade de São Paulo, Estado de São Paulo, na Avenida Brigadeiro Faria Lima, 1811, bairro Jardim Paulista, CEP 01452-001, inscrita no Cadastro Nacional de Pessoa Jurídica – CNPJ sob o nº 23.813.779/0001-60, neste ato representada na forma de seu Estatuto Social, doravante denominada simplesmente "CONTRATADA".
+## Contratada
 
----
-
-## CLÁUSULA PRIMEIRA - DO OBJETO
-
-1.1 - A CONTRATADA prestará à CONTRATANTE os seguintes serviços:
-
-- 1.1.1 Setup
-- 1.1.2 Plataforma Oxy + Gênio (Agente de Inteligência Artificial especializado em finanças)
-
-### 1.2 - Setup
-
-Duração: 90 dias após o kick-off
-
-**Entregáveis:**
-- a) Plano de Contas: análise do plano atual, identificação de otimizações e melhorias
-- b) Dados: aplicação de checklist dos processos geradores de dados
-- c) ERP: análise do sistema, identificação de pré-requisitos e pontos de atenção
-- d) Tecnologia: análise técnica do ERP, definição de modalidade de integração
-
-### 1.3 - Plataforma OXY + Gênio
-
-A CONTRATANTE terá acesso à plataforma tecnológica OXY com as seguintes funcionalidades:
-
-- **Aba DRE:** análises vertical, horizontal e mensal, gráficos, comparação de períodos
-- **Aba Fluxo de Caixa:** análise mensal, curva ABC, projeções de fluxo de caixa diário
-- **Análise do Ciclo Financeiro:** indicadores PMP, PME, PMR, Ciclo Financeiro e Operacional
-- **Planejamento Orçamentário:** projeções com base em histórico do ERP
-- **Agente de IA (Gênio):** questionamentos em tempo real com base nos dados do ERP
+O2 INC GESTÃO E TECNOLOGIA S.A., sociedade anônima, inscrita no CNPJ sob nº 23.813.779/0001-60, com sede na Avenida Brigadeiro Faria Lima, 1811, bairro Jardim Paulista, CEP 01452-001, São Paulo/SP, endereço de e-mail cs@o2inc.com.br, doravante designada CONTRATADA.
 
 ---
 
-## CLÁUSULA SEGUNDA - DA REMUNERAÇÃO
+## CONDIÇÕES DO CONTRATO SAAS OXY + GÊNIO
 
-{{FORMA_PAGAMENTO}}
-
-**Valor Total:** {{VALOR_TOTAL}}
+| Item | Condição |
+|------|----------|
+| Valor do SETUP | R$ {{VALOR_SETUP}} (à vista ou 12x cartão) |
+| Pagamento SETUP | À vista (boleto/TED) ou 12x Cartão de Crédito |
+| Mensalidade Plataforma Oxy + Gênio | R$ {{VALOR_MENSALIDADE}} /mês |
+| Pagamento Mensalidade | Boleto Bancário (recorrente) |
+| Vigência | 12 meses (renovação automática) |
+| Aviso prévio para cancelamento | 30 dias (via e-mail cs@o2inc.com.br) |
+| Data de início do projeto | {{DATA}} |
 
 ---
 
-## OBSERVAÇÕES
+## DESCRITIVO DO SERVIÇO
 
-{{OBSERVACOES}}
+### Módulo: SETUP
+
+**Duração:** até 90 dias após o kick-off
+
+**Encontros:** Touch point semanal (reunião ou contato telefônico/WhatsApp)
+
+**Encontros obrigatórios:** 4 encontros iniciais para entrevistas e compreensão dos processos
+
+### Entregáveis do SETUP
+
+- a) PLANO DE CONTAS
+  - Análise do Plano de Contas atual
+  - Identificação de otimizações e melhorias
+  - Sugestão de mudanças e suporte técnico ao time
+- b) DADOS
+  - Checklist dos processos geradores de dados
+  - Entrevistas com áreas financeiras
+  - Identificação de melhorias e suporte ao time
+- c) ERP
+  - Análise do sistema e identificação de pré-requisitos
+  - Verificação de subutilizações e possíveis melhorias
+- d) TECNOLOGIA
+  - Análise técnica e definição da modalidade de integração
+  - Alinhamento Plano de Contas ERP → Plataforma Oxy
+  - Integração, validação e liberação de acessos
+
+**Diretrizes:** O prazo de 90 dias depende do engajamento da CONTRATANTE. Caso a implantação dependa de ERP ou outras ferramentas, o prazo será revisto em comum acordo.
 
 ---
 
-## DATA E ASSINATURA
+### Módulo: PLATAFORMA OXY + GÊNIO (IA)
 
-**Local e Data:** {{DATA}}
+**Descrição:** Plataforma tecnológica para gestão estratégica e financeira com Agente de Inteligência Artificial especializado em finanças.
 
-_______________________________
-**CONTRATANTE:** {{CLIENTE}}
-CNPJ: {{CNPJ}}
+### Funcionalidades Inclusas
 
-_______________________________
-**CONTRATADA**
-O2 INC GESTÃO E TECNOLOGIA S.A.
+- a) Aba DRE (Demonstrativo de Resultado): análises vertical, horizontal e mensal; gráficos; comparação de períodos; detalhamento por categorias e fornecedores
+- b) Aba Fluxo de Caixa: análise mensal; comparações de períodos; curva ABC; projeções de fluxo de caixa diário
+- c) Análise do Ciclo Financeiro: indicadores PMP, PME, PMR, Ciclo Financeiro e Operacional; análises por cliente e fornecedor; gráficos de capital de giro
+- d) Planejamento Orçamentário: projeções com base em histórico do ERP; análise orçado x realizado; cruzamento de dados
+- e) Agente de IA (Gênio): questionamentos em tempo real com base nos dados do ERP; insights instantâneos; recomendações financeiras
+
+**Diretrizes:** A CONTRATADA não se responsabiliza por inconsistências nos dados ou atrasos decorrentes do não cumprimento das ações sugeridas. Recomenda-se dupla verificação dos insights do Gênio.
+
+---
+
+## MASTER SERVICE AGREEMENT
+
+### 1. FORMA DE PAGAMENTO
+
+1.1 O SETUP é exigível no ato da assinatura, podendo ser: (a) à vista via TED/boleto; ou (b) parcelado em 12x no cartão de crédito com tarifas inclusas.
+
+1.2 A mensalidade da Plataforma Oxy + Gênio será paga via boleto bancário com vencimento recorrente.
+
+1.3 Em caso de inadimplemento: multa de 2% + juros de 1% ao mês sobre o débito.
+
+1.4 A inadimplência autoriza a suspensão do acesso à Plataforma e uso de medidas legais para recuperação de valores.
+
+1.5 Reajuste anual pelo IPCA ou índice substituto, na data de renovação.
+
+### 2. OBRIGAÇÕES DA CONTRATADA
+
+2.1 Realizar a entrega do escopo contratado do serviço de Setup da Plataforma Oxy + Gênio.
+
+2.2 Assegurar o funcionamento e manutenção da Plataforma durante a vigência, incluindo atualizações e correções necessárias.
+
+### 3. OBRIGAÇÕES DA CONTRATANTE
+
+3.1 Participar ativamente do processo de Setup, cumprindo prazos, reuniões e atividades definidos.
+
+3.2 Seguir as instruções, orientações técnicas e boas práticas recomendadas para utilização da Plataforma.
+
+3.3 Utilizar a plataforma de forma responsável, dentro dos limites contratuais e em conformidade com a legislação vigente.
+
+3.4 Efetuar os pagamentos devidos nos prazos e condições estabelecidos.
+
+### 4. CONFIDENCIALIDADE E PROTEÇÃO DE DADOS
+
+4.1 A CONTRATADA manterá sigilo absoluto sobre informações confidenciais, exceto as necessárias ao cumprimento do contrato.
+
+4.2 A CONTRATADA observará rigorosamente a Lei nº 13.709/2018 (LGPD), assegurando proteção e confidencialidade dos dados.
+
+### 5. RESCISÃO E CANCELAMENTO
+
+5.1 O SETUP é irrevogável e irretratável, não sendo passível de reembolso após assinatura.
+
+5.2 A Plataforma Oxy + Gênio pode ser rescindida a qualquer momento mediante aviso prévio de 30 dias, por escrito, enviado a cs@o2inc.com.br.
+
+5.3 Em qualquer hipótese de rescisão, não haverá devolução de valores já pagos.
+
+5.4 A rescisão não prejudica o direito das partes de buscar medidas legais cabíveis.
+
+### 6. NÃO SOLICITAÇÃO
+
+6.1 Durante a vigência e por 2 anos após o término, as PARTES não contratarão ou tentarão atrair sócios, colaboradores ou prestadores da outra PARTE, salvo autorização por escrito.
+
+### 7. DISPOSIÇÕES GERAIS
+
+7.1 A invalidade de qualquer disposição não afeta as demais, que permanecerão válidas e exequíveis.
+
+7.2 Alterações só serão válidas se aprovadas por ambas as PARTES, formalizadas por escrito e assinadas.
+
+7.3 Notificações serão por: (i) Cartório de Títulos e Documentos; (ii) carta registrada; ou (iii) e-mail com comprovante de envio.
+
+7.4 Este Contrato é de natureza estritamente civil, inexistindo vínculo empregatício entre as PARTES.
+
+7.5 A prestação dos serviços configura obrigação de meio e não de resultado.
+
+7.6 As PARTES comprometem-se a não oferecer, dar ou aceitar pagamentos, doações ou vantagens que constituam prática ilegal ou de corrupção.
+
+7.7 Este Contrato é irrevogável, irretratável e representa o acordo completo entre as PARTES, substituindo entendimentos anteriores.
+
+### 8. LEI APLICÁVEL E FORO
+
+8.1 Este contrato será regido pelas leis da República Federativa do Brasil. Qualquer disputa será submetida ao Foro Central da Cidade de São Paulo - SP, com exclusão de qualquer outro.
+
+---
+
+São Paulo, {{DATA}}
+
+| CONTRATANTE | CONTRATADA |
+|-------------|------------|
+| _______________________________ | _______________________________ |
+| {{CLIENTE}} | O2 INC GESTÃO E TECNOLOGIA S.A. |
+
+### TESTEMUNHAS:
+
+| _______________________________ | _______________________________ |
+|-------------|------------|
+| Nome: | Nome: |
+| CPF: | CPF: |
 `,
   },
   {
@@ -232,72 +434,166 @@ O2 INC GESTÃO E TECNOLOGIA S.A.
     name: "SaaS Oxy + Gênio + Especialista",
     description: "Plataforma Oxy com IA e acompanhamento de especialista O2",
     createdAt: "Modelo do sistema",
-    content: `# INSTRUMENTO PARTICULAR DE PRESTAÇÃO DE SERVIÇOS
+    content: `# SAAS OXY + GÊNIO + ESPECIALISTA
 
-Pelo presente instrumento:
+## Contratante
 
-**{{CLIENTE}}**, sociedade empresária limitada, inscrita no CNPJ sob o nº **{{CNPJ}}**, com sede na **{{ENDERECO_EMPRESA}}** representada neste ato na forma de seu contrato social, por seu sócio **{{SOCIO}}**, brasileiro, empresário, inscrito no CPF sob número **{{CPF}}**, residente e domiciliado na **{{ENDERECO_SOCIO}}**, doravante referida simplesmente como "CONTRATANTE", e de outro lado;
+{{CLIENTE}}, pessoa jurídica de direito privado, inscrita no CNPJ sob nº {{CNPJ}}, com sede na {{ENDERECO_EMPRESA}}, neste ato representada por seu(ua) representante legal, {{SOCIO}}, brasileiro(a), inscrito(a) no CPF sob nº {{CPF}}, doravante designado CONTRATANTE.
 
-**O2 INC GESTÃO E TECNOLOGIA S.A.**, sociedade anônima, com sede na cidade de São Paulo, Estado de São Paulo, na Avenida Brigadeiro Faria Lima, 1811, bairro Jardim Paulista, CEP 01452-001, inscrita no Cadastro Nacional de Pessoa Jurídica – CNPJ sob o nº 23.813.779/0001-60, neste ato representada na forma de seu Estatuto Social, doravante denominada simplesmente "CONTRATADA".
+## Contratada
+
+O2 INC GESTÃO E TECNOLOGIA S.A., sociedade anônima, inscrita no CNPJ sob nº 23.813.779/0001-60, com sede na Avenida Brigadeiro Faria Lima, 1811, bairro Jardim Paulista, CEP 01452-001, São Paulo/SP, endereço de e-mail cs@o2inc.com.br, doravante designada CONTRATADA.
 
 ---
 
-## CLÁUSULA PRIMEIRA - DO OBJETO
+## CONDIÇÕES DO CONTRATO
 
-1.1 - A CONTRATADA prestará à CONTRATANTE os seguintes serviços:
+| Item | Condição |
+|------|----------|
+| Valor do SETUP | R$ {{VALOR_SETUP}} (à vista ou 12x cartão) |
+| Pagamento SETUP | À vista (boleto/TED) ou 12x Cartão de Crédito |
+| Mensalidade (Oxy + Gênio + Especialista) | R$ {{VALOR_MENSALIDADE}} /mês |
+| Pagamento Mensalidade | Boleto Bancário (recorrente) |
+| Vigência | 12 meses (renovação automática) |
+| Aviso prévio para cancelamento | {{AVISO_PREVIO_DIAS}} dias (via e-mail cs@o2inc.com.br) |
+| Data de início do projeto | {{DATA}} |
 
-- 1.1.1 Setup
-- 1.1.2 Plataforma Oxy + Gênio (Agente de Inteligência Artificial especializado em finanças)
-- 1.1.3 Especialista O2 Inc.
+---
 
-### 1.2 - Setup
+## DESCRITIVO DO SERVIÇO
 
-Duração: 90 dias após o kick-off
+### Módulo: SETUP
 
-**Entregáveis:**
-- a) Plano de Contas
-- b) Dados
+**Duração:** até 90 dias após o kick-off
+
+**Encontros:** Touch point semanal (reunião ou contato telefônico/WhatsApp)
+
+**Encontros obrigatórios:** 4 encontros iniciais para entrevistas e compreensão dos processos
+
+### Entregáveis do SETUP
+
+- a) PLANO DE CONTAS
+  - Análise do Plano de Contas atual, otimizações e suporte técnico
+- b) DADOS
+  - Checklist dos processos, entrevistas financeiras, identificação de melhorias
 - c) ERP
-- d) Tecnologia
-
-### 1.3 - Plataforma OXY + Gênio
-
-Funcionalidades inclusas:
-- Aba DRE, Fluxo de Caixa, Análise do Ciclo Financeiro
-- Planejamento Orçamentário
-- Agente de IA (Gênio)
-
-### 1.4 - Especialista O2 Inc.
-
-Acompanhamento por especialista financeiro com reuniões mensais de análise e orientação estratégica.
+  - Análise do sistema, pré-requisitos, subutilizações e melhorias
+- d) TECNOLOGIA
+  - Integração ERP → Oxy, validação e liberação de acessos
 
 ---
 
-## CLÁUSULA SEGUNDA - DA REMUNERAÇÃO
+### Módulo: PLATAFORMA OXY + GÊNIO (IA)
 
-{{FORMA_PAGAMENTO}}
-
-**Valor Total:** {{VALOR_TOTAL}}
-
----
-
-## OBSERVAÇÕES
-
-{{OBSERVACOES}}
+- a) Aba DRE: análises vertical, horizontal e mensal; gráficos; comparação de períodos
+- b) Aba Fluxo de Caixa: análise mensal; curva ABC; projeções diárias
+- c) Ciclo Financeiro: indicadores PMP, PME, PMR; análises por cliente/fornecedor
+- d) Planejamento Orçamentário: projeções com histórico; orçado x realizado
+- e) Agente de IA (Gênio): questionamentos em tempo real; insights instantâneos
 
 ---
 
-## DATA E ASSINATURA
+### Módulo: ESPECIALISTA O2 INC
 
-**Local e Data:** {{DATA}}
+**Encontros:** 4 encontros por mês (semanais), virtuais, mediante agendamento
 
-_______________________________
-**CONTRATANTE:** {{CLIENTE}}
-CNPJ: {{CNPJ}}
+### Regras do Especialista
 
-_______________________________
-**CONTRATADA**
-O2 INC GESTÃO E TECNOLOGIA S.A.
+- f) Encontros agendados pela CONTRATANTE conforme disponibilidade da agenda (via link)
+- g) Assessoria financeira ocorre exclusivamente durante os encontros, com base na Oxy e Gênio
+- h) Não inclui trabalhos manuais, materiais em ferramentas paralelas ou atividades fora dos encontros
+- i) Encontros não comparecidos não são passíveis de reagendamento ou compensação
+- j) Horas não utilizadas no mês não são cumulativas para meses seguintes
+
+**Diretrizes:** A CONTRATADA não se responsabiliza por inconsistências nos dados ou atrasos decorrentes do não cumprimento das ações sugeridas. Recomenda-se dupla verificação dos insights.
+
+---
+
+## MASTER SERVICE AGREEMENT
+
+### 1. FORMA DE PAGAMENTO
+
+1.1 O SETUP é exigível no ato da assinatura: (a) à vista via TED/boleto; ou (b) 12x cartão de crédito com tarifas inclusas.
+
+1.2 A mensalidade (Oxy + Gênio + Especialista) será paga via boleto bancário com vencimento recorrente.
+
+1.3 Em caso de inadimplemento: multa de 2% + juros de 1% ao mês sobre o débito.
+
+1.4 A inadimplência autoriza a suspensão do acesso à Plataforma e uso de medidas legais para recuperação.
+
+1.5 Reajuste anual pelo IPCA ou índice substituto, na data de renovação.
+
+### 2. OBRIGAÇÕES DA CONTRATADA
+
+2.1 Realizar a entrega do escopo contratado do Setup da Plataforma Oxy + Gênio.
+
+2.2 Disponibilizar 4 encontros mensais com especialista para esclarecimentos e orientações técnicas.
+
+2.3 Assegurar funcionamento e manutenção da Plataforma, incluindo atualizações e correções.
+
+### 3. OBRIGAÇÕES DA CONTRATANTE
+
+3.1 Participar ativamente do Setup, cumprindo prazos, reuniões e atividades definidos.
+
+3.2 Seguir instruções, orientações técnicas e boas práticas para utilização da Plataforma.
+
+3.3 Utilizar a plataforma de forma responsável, dentro dos limites contratuais e legais.
+
+3.4 Efetuar os pagamentos nos prazos e condições estabelecidos.
+
+### 4. CONFIDENCIALIDADE E PROTEÇÃO DE DADOS
+
+4.1 A CONTRATADA manterá sigilo absoluto sobre informações confidenciais.
+
+4.2 Observância rigorosa da Lei nº 13.709/2018 (LGPD).
+
+### 5. RESCISÃO E CANCELAMENTO
+
+5.1 O SETUP é irrevogável e irretratável, não sendo passível de reembolso.
+
+5.2 Plataforma + Especialista podem ser rescindidos mediante aviso prévio de {{AVISO_PREVIO_DIAS}} dias via cs@o2inc.com.br.
+
+5.3 Em qualquer rescisão, não haverá devolução de valores já pagos.
+
+5.4 A rescisão não prejudica direitos legais cabíveis.
+
+### 6. NÃO SOLICITAÇÃO
+
+6.1 Durante a vigência e por 2 anos após, as PARTES não contratarão sócios, colaboradores ou prestadores da outra PARTE.
+
+### 7. DISPOSIÇÕES GERAIS
+
+7.1 A invalidade de qualquer disposição não afeta as demais.
+
+7.2 Alterações só serão válidas se formalizadas por escrito e assinadas.
+
+7.3 Notificações por cartório, carta registrada ou e-mail com comprovante.
+
+7.4 Contrato de natureza civil, sem vínculo empregatício.
+
+7.5 Prestação de serviços configura obrigação de meio, não de resultado.
+
+7.6 As PARTES não oferecerão ou aceitarão pagamentos/vantagens que constituam prática ilegal.
+
+### 8. LEI APLICÁVEL E FORO
+
+8.1 Regido pelas leis do Brasil. Foro: Cidade de São Paulo - SP.
+
+---
+
+São Paulo, {{DATA}}
+
+| CONTRATANTE | CONTRATADA |
+|-------------|------------|
+| _______________________________ | _______________________________ |
+| {{CLIENTE}} | O2 INC GESTÃO E TECNOLOGIA S.A. |
+
+### TESTEMUNHAS:
+
+| _______________________________ | _______________________________ |
+|-------------|------------|
+| Nome: | Nome: |
+| CPF: | CPF: |
 `,
   },
   {
@@ -875,9 +1171,13 @@ export const availablePlaceholders = [
   { key: "EMAIL", label: "E-mail", category: "contato" },
   { key: "TELEFONE", label: "Telefone", category: "contato" },
   { key: "VALOR_TOTAL", label: "Valor Total", category: "pagamento" },
+  { key: "VALOR_SETUP", label: "Valor do Setup", category: "pagamento" },
+  { key: "VALOR_MENSALIDADE", label: "Valor da Mensalidade", category: "pagamento" },
+  { key: "VALOR_PARCELA_SETUP", label: "Parcela do Setup (12x)", category: "pagamento" },
   { key: "FORMA_PAGAMENTO", label: "Forma de Pagamento", category: "pagamento" },
   { key: "PARCELAS", label: "Parcelas", category: "pagamento" },
   { key: "DATA", label: "Data de Assinatura", category: "contrato" },
+  { key: "AVISO_PREVIO_DIAS", label: "Dias de Aviso Prévio", category: "contrato" },
   { key: "OBSERVACOES", label: "Observações", category: "contrato" },
   { key: "PRODUTOS", label: "Tabela de Produtos", category: "contrato" },
 ];
