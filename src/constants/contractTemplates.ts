@@ -438,7 +438,7 @@ São Paulo, {{DATA}}
 
 ## Contratante
 
-{{CLIENTE}}, pessoa jurídica de direito privado, inscrita no CNPJ sob nº {{CNPJ}}, com sede na {{ENDERECO_EMPRESA}}, neste ato representada por seu(ua) representante legal, {{SOCIO}}, brasileiro(a), inscrito(a) no CPF sob nº {{CPF}}, doravante designado CONTRATANTE.
+{{CLIENTE}}, pessoa jurídica de direito privado, inscrita no CNPJ sob nº {{CNPJ}}, com sede na {{ENDERECO_COMPLETO}}, neste ato representada por seu(ua) representante legal, {{NOME_SOCIO}}, brasileiro(a), inscrito(a) no CPF sob nº {{CPF}}, doravante designado CONTRATANTE.
 
 ## Contratada
 
@@ -455,7 +455,7 @@ O2 INC GESTÃO E TECNOLOGIA S.A., sociedade anônima, inscrita no CNPJ sob nº 2
 | Mensalidade (Oxy + Gênio + Especialista) | R$ {{VALOR_MENSALIDADE}} /mês |
 | Pagamento Mensalidade | Boleto Bancário (recorrente) |
 | Vigência | 12 meses (renovação automática) |
-| Aviso prévio para cancelamento | {{AVISO_PREVIO_DIAS}} dias (via e-mail cs@o2inc.com.br) |
+| Aviso prévio para cancelamento | {{AVISO_DIAS}} dias (via e-mail cs@o2inc.com.br) |
 | Data de início do projeto | {{DATA}} |
 
 ---
@@ -551,7 +551,7 @@ O2 INC GESTÃO E TECNOLOGIA S.A., sociedade anônima, inscrita no CNPJ sob nº 2
 
 5.1 O SETUP é irrevogável e irretratável, não sendo passível de reembolso.
 
-5.2 Plataforma + Especialista podem ser rescindidos mediante aviso prévio de {{AVISO_PREVIO_DIAS}} dias via cs@o2inc.com.br.
+5.2 Plataforma + Especialista podem ser rescindidos mediante aviso prévio de {{AVISO_DIAS}} dias via cs@o2inc.com.br.
 
 5.3 Em qualquer rescisão, não haverá devolução de valores já pagos.
 
@@ -592,8 +592,8 @@ São Paulo, {{DATA}}
 
 | _______________________________ | _______________________________ |
 |-------------|------------|
-| Nome: | Nome: |
-| CPF: | CPF: |
+| Nome: {{NOME_TESTEMUNHA1}} | Nome: {{NOME_TESTEMUNHA2}} |
+| CPF: {{CPF_TESTEMUNHA1}} | CPF: {{CPF_TESTEMUNHA2}} |
 `,
   },
   {
@@ -1165,8 +1165,10 @@ export const availablePlaceholders = [
   { key: "CNPJ", label: "CNPJ", category: "empresa" },
   { key: "ENDERECO_EMPRESA", label: "Endereço da Empresa", category: "empresa" },
   { key: "SOCIO", label: "Nome do Sócio/Representante", category: "representante" },
+  { key: "NOME_SOCIO", label: "Nome do Sócio (alternativo)", category: "representante" },
   { key: "CPF", label: "CPF do Representante", category: "representante" },
   { key: "ENDERECO_SOCIO", label: "Endereço do Sócio", category: "representante" },
+  { key: "ENDERECO_COMPLETO", label: "Endereço Completo da Empresa", category: "empresa" },
   { key: "RG", label: "RG do Representante", category: "representante" },
   { key: "EMAIL", label: "E-mail", category: "contato" },
   { key: "TELEFONE", label: "Telefone", category: "contato" },
@@ -1178,6 +1180,11 @@ export const availablePlaceholders = [
   { key: "PARCELAS", label: "Parcelas", category: "pagamento" },
   { key: "DATA", label: "Data de Assinatura", category: "contrato" },
   { key: "AVISO_PREVIO_DIAS", label: "Dias de Aviso Prévio", category: "contrato" },
+  { key: "AVISO_DIAS", label: "Dias de Aviso (alternativo)", category: "contrato" },
   { key: "OBSERVACOES", label: "Observações", category: "contrato" },
   { key: "PRODUTOS", label: "Tabela de Produtos", category: "contrato" },
+  { key: "NOME_TESTEMUNHA1", label: "Nome Testemunha 1", category: "assinatura" },
+  { key: "CPF_TESTEMUNHA1", label: "CPF Testemunha 1", category: "assinatura" },
+  { key: "NOME_TESTEMUNHA2", label: "Nome Testemunha 2", category: "assinatura" },
+  { key: "CPF_TESTEMUNHA2", label: "CPF Testemunha 2", category: "assinatura" },
 ];
