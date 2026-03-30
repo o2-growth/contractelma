@@ -285,6 +285,8 @@ _______________________________
               <SendToSignature
                 contractName={contractData.template?.name || "Contrato"}
                 contractContent={generatedContent || ""}
+                clientData={contractData.clientData}
+                docxTemplate={contractData.template?.docxTemplate}
               />
             </>
           )}
