@@ -30,6 +30,8 @@ interface DocumentResult {
 interface SendToSignatureProps {
   contractName: string;
   contractContent: string;
+  clientData?: Record<string, string>;
+  docxTemplate?: string;
 }
 
 const ACTION_LABELS: Record<string, string> = {
@@ -40,7 +42,7 @@ const ACTION_LABELS: Record<string, string> = {
   RECEIPT: "Acusar recebimento",
 };
 
-export function SendToSignature({ contractName, contractContent }: SendToSignatureProps) {
+export function SendToSignature({ contractName, contractContent, clientData, docxTemplate }: SendToSignatureProps) {
   const [signers, setSigners] = useState<Signer[]>([
     { name: "", email: "", action: "SIGN" },
   ]);
@@ -74,6 +76,8 @@ export function SendToSignature({ contractName, contractContent }: SendToSignatu
           contractName,
           contractContent,
           signers,
+          clientData,
+          docxTemplate,
         },
       });
 

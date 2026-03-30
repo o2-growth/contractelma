@@ -19,6 +19,7 @@ export interface Template {
   description: string;
   createdAt: string;
   content?: string;
+  docxTemplate?: string;
 }
 
 export type ClientData = Record<string, string>;
