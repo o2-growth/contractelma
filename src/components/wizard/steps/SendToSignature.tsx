@@ -76,6 +76,8 @@ export function SendToSignature({ contractName, contractContent, clientData, doc
           contractName,
           contractContent,
           signers,
+          clientData,
+          docxTemplate,
         },
       });
 
