@@ -30,6 +30,8 @@ interface DocumentResult {
 interface SendToSignatureProps {
   contractName: string;
   contractContent: string;
+  clientData?: Record<string, string>;
+  docxTemplate?: string;
 }
 
 const ACTION_LABELS: Record<string, string> = {
