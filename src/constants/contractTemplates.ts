@@ -7,6 +7,7 @@ export const defaultTemplates: Template[] = [
     name: "CFO as a Service",
     description: "Assessoria de Gestão Financeira Recorrente - CFO as a Service (modelo DOCX)",
     createdAt: "Modelo do sistema",
+    category: "cfo",
     docxTemplate: "templates/base/cfo-as-a-service.docx",
     content: `# CONTRATO DE PRESTAÇÃO DE SERVIÇOS — CFO AS A SERVICE
 
@@ -44,29 +45,34 @@ São Paulo, {{DIA}} de {{MES}} de 20{{ANO}}
     name: "SaaS Oxy + Gênio + Especialista",
     description: "Plataforma Oxy com IA e acompanhamento de especialista O2",
     createdAt: "Modelo do sistema",
-    content: `# SAAS OXY + GÊNIO + ESPECIALISTA
+    category: "saas",
+    content: `# CONTRATO DE PRESTAÇÃO DE SERVIÇOS — SAAS OXY + GÊNIO + ESPECIALISTA
 
-## Contratante
+## QUADRO RESUMO
 
-{{CLIENTE}}, pessoa jurídica de direito privado, inscrita no CNPJ sob nº {{CNPJ}}, com sede na {{ENDERECO_COMPLETO}}, neste ato representada por seu(ua) representante legal, {{NOME_SOCIO}}, brasileiro(a), inscrito(a) no CPF sob nº {{CPF}}, doravante designado CONTRATANTE.
+| Campo | Valor |
+|-------|-------|
+| **CONTRATANTE** | |
+| Razão Social | {{RAZAO_SOCIAL}} |
+| CNPJ | {{CNPJ}} |
+| Endereço | {{ENDERECO}} |
+| **REPRESENTANTE LEGAL** | |
+| Nome | {{NOME_REPRESENTANTE}} |
+| CPF | {{CPF_REPRESENTANTE}} |
+| E-mail | {{EMAIL_REPRESENTANTE}} |
+| **REMUNERAÇÃO** | |
+| Valor do Setup | {{VALOR_SETUP}} |
+| Mensalidade (Oxy + Gênio + Especialista) | {{VALOR_MENSALIDADE}} |
+| Aviso prévio para cancelamento | {{AVISO_DIAS}} dias |
+| **VIGÊNCIA** | |
+| Prazo | {{PRAZO_VIGENCIA}} |
+| Rescisão (aviso prévio) | {{PRAZO_RESCISAO}} |
+
+---
 
 ## Contratada
 
 O2 INC GESTÃO E TECNOLOGIA S.A., sociedade anônima, inscrita no CNPJ sob nº 23.813.779/0001-60, com sede na Avenida Brigadeiro Faria Lima, 1811, bairro Jardim Paulista, CEP 01452-001, São Paulo/SP, endereço de e-mail cs@o2inc.com.br, doravante designada CONTRATADA.
-
----
-
-## CONDIÇÕES DO CONTRATO
-
-| Item | Condição |
-|------|----------|
-| Valor do SETUP | R$ {{VALOR_SETUP}} (à vista ou 12x cartão) |
-| Pagamento SETUP | À vista (boleto/TED) ou 12x Cartão de Crédito |
-| Mensalidade (Oxy + Gênio + Especialista) | R$ {{VALOR_MENSALIDADE}} /mês |
-| Pagamento Mensalidade | Boleto Bancário (recorrente) |
-| Vigência | 12 meses (renovação automática) |
-| Aviso prévio para cancelamento | {{AVISO_DIAS}} dias (via e-mail cs@o2inc.com.br) |
-| Data de início do projeto | {{DATA}} |
 
 ---
 
@@ -82,14 +88,10 @@ O2 INC GESTÃO E TECNOLOGIA S.A., sociedade anônima, inscrita no CNPJ sob nº 2
 
 ### Entregáveis do SETUP
 
-- a) PLANO DE CONTAS
-  - Análise do Plano de Contas atual, otimizações e suporte técnico
-- b) DADOS
-  - Checklist dos processos, entrevistas financeiras, identificação de melhorias
-- c) ERP
-  - Análise do sistema, pré-requisitos, subutilizações e melhorias
-- d) TECNOLOGIA
-  - Integração ERP → Oxy, validação e liberação de acessos
+- a) PLANO DE CONTAS — Análise do Plano de Contas atual, otimizações e suporte técnico
+- b) DADOS — Checklist dos processos, entrevistas financeiras, identificação de melhorias
+- c) ERP — Análise do sistema, pré-requisitos, subutilizações e melhorias
+- d) TECNOLOGIA — Integração ERP → Oxy, validação e liberação de acessos
 
 ---
 
@@ -191,12 +193,12 @@ O2 INC GESTÃO E TECNOLOGIA S.A., sociedade anônima, inscrita no CNPJ sob nº 2
 
 ---
 
-São Paulo, {{DATA}}
+São Paulo, {{DIA}} de {{MES}} de 20{{ANO}}
 
 | CONTRATANTE | CONTRATADA |
 |-------------|------------|
 | _______________________________ | _______________________________ |
-| {{CLIENTE}} | O2 INC GESTÃO E TECNOLOGIA S.A. |
+| {{RAZAO_SOCIAL}} | O2 INC GESTÃO E TECNOLOGIA S.A. |
 
 ### TESTEMUNHAS:
 
@@ -211,13 +213,33 @@ São Paulo, {{DATA}}
     name: "Plano Anual Oxigênio Empresarial",
     description: "Programa Educacional Anual em Gestão Estratégica e Financeira",
     createdAt: "Modelo do sistema",
-    content: `# INSTRUMENTO PARTICULAR DE PRESTAÇÃO DE SERVIÇOS
+    category: "educacional",
+    content: `# CONTRATO DE PRESTAÇÃO DE SERVIÇOS — PLANO ANUAL OXIGÊNIO EMPRESARIAL
 
-Pelo presente instrumento:
+## QUADRO RESUMO
 
-**{{CLIENTE}}**, sociedade empresária limitada, inscrita no CNPJ sob o nº **{{CNPJ}}**, com sede na **{{ENDERECO_EMPRESA}}** representada neste ato na forma de seu contrato social, por seu sócio **{{SOCIO}}**, brasileiro, empresário, inscrito no CPF sob número **{{CPF}}**, residente e domiciliado na **{{ENDERECO_SOCIO}}**, doravante referida simplesmente como "CONTRATANTE", e de outro lado;
+| Campo | Valor |
+|-------|-------|
+| **CONTRATANTE** | |
+| Razão Social | {{RAZAO_SOCIAL}} |
+| CNPJ | {{CNPJ}} |
+| Endereço | {{ENDERECO}} |
+| **REPRESENTANTE LEGAL** | |
+| Nome | {{NOME_REPRESENTANTE}} |
+| CPF | {{CPF_REPRESENTANTE}} |
+| E-mail | {{EMAIL_REPRESENTANTE}} |
+| **REMUNERAÇÃO** | |
+| Valor Total | {{VALOR_TOTAL}} |
+| Forma de Pagamento | {{FORMA_PAGAMENTO}} |
+| **VIGÊNCIA** | |
+| Prazo | {{PRAZO_VIGENCIA}} |
+| Rescisão (aviso prévio) | {{PRAZO_RESCISAO}} |
 
-**O2 INC GESTÃO E TECNOLOGIA S.A.**, sociedade anônima, com sede na cidade de São Paulo, Estado de São Paulo, na Avenida Brigadeiro Faria Lima, 1811, bairro Jardim Paulista, CEP 01452-001, inscrita no Cadastro Nacional de Pessoa Jurídica – CNPJ sob o nº 23.813.779/0001-60, neste ato representada na forma de seu Estatuto Social, doravante denominada simplesmente "CONTRATADA".
+---
+
+## Contratada
+
+O2 INC GESTÃO E TECNOLOGIA S.A., sociedade anônima, com sede na cidade de São Paulo, Estado de São Paulo, na Avenida Brigadeiro Faria Lima, 1811, bairro Jardim Paulista, CEP 01452-001, inscrita no Cadastro Nacional de Pessoa Jurídica – CNPJ sob o nº 23.813.779/0001-60, neste ato representada na forma de seu Estatuto Social, doravante denominada simplesmente "CONTRATADA".
 
 ---
 
@@ -258,24 +280,14 @@ Direito ao acompanhamento de um especialista financeiro da O2 Inc.
 
 ## CLÁUSULA SEGUNDA - DA REMUNERAÇÃO
 
-{{FORMA_PAGAMENTO}}
-
-**Valor Total:** {{VALOR_TOTAL}}
-
----
-
-## OBSERVAÇÕES
-
 {{OBSERVACOES}}
 
 ---
 
-## DATA E ASSINATURA
-
-**Local e Data:** {{DATA}}
+São Paulo, {{DIA}} de {{MES}} de 20{{ANO}}
 
 _______________________________
-**CONTRATANTE:** {{CLIENTE}}
+**CONTRATANTE:** {{RAZAO_SOCIAL}}
 CNPJ: {{CNPJ}}
 
 _______________________________
@@ -288,13 +300,33 @@ O2 INC GESTÃO E TECNOLOGIA S.A.
     name: "Parceria Estratégica Oxy Hacker",
     description: "Contrato de parceria para oferta do produto CFO as a Service",
     createdAt: "Modelo do sistema",
-    content: `# CONTRATO DE PARCERIA ESTRATÉGICA OXY HACKER
+    category: "parceria",
+    content: `# CONTRATO DE PARCERIA ESTRATÉGICA — OXY HACKER
 
-Pelo presente instrumento:
+## QUADRO RESUMO
 
-**O2 INC GESTÃO E TECNOLOGIA S.A.**, sociedade anônima, com sede na cidade de São Paulo, Estado de São Paulo, na Avenida Brigadeiro Faria Lima, 1811, bairro Jardim Paulista, CEP 01452-001, inscrita no Cadastro Nacional de Pessoa Jurídica – CNPJ sob o nº 23.813.779/0001-60, representada na forma de seu estatuto social, doravante denominada como "CONTRATADA".
+| Campo | Valor |
+|-------|-------|
+| **PARCEIRA ESTRATÉGICA** | |
+| Razão Social | {{RAZAO_SOCIAL}} |
+| CNPJ | {{CNPJ}} |
+| Endereço | {{ENDERECO}} |
+| **REPRESENTANTE LEGAL** | |
+| Nome | {{NOME_REPRESENTANTE}} |
+| CPF | {{CPF_REPRESENTANTE}} |
+| E-mail | {{EMAIL_REPRESENTANTE}} |
+| **REMUNERAÇÃO** | |
+| Valor Total | {{VALOR_TOTAL}} |
+| Forma de Pagamento | {{FORMA_PAGAMENTO}} |
+| **VIGÊNCIA** | |
+| Prazo | {{PRAZO_VIGENCIA}} |
+| Rescisão (aviso prévio) | {{PRAZO_RESCISAO}} |
 
-**{{CLIENTE}}**, inscrita no CNPJ sob nº **{{CNPJ}}**, com sede em **{{ENDERECO_EMPRESA}}**, representada neste ato por **{{SOCIO}}**, CPF nº **{{CPF}}**, doravante denominada simplesmente "PARCEIRA ESTRATÉGICA".
+---
+
+## Contratada
+
+O2 INC GESTÃO E TECNOLOGIA S.A., sociedade anônima, com sede na cidade de São Paulo, Estado de São Paulo, na Avenida Brigadeiro Faria Lima, 1811, bairro Jardim Paulista, CEP 01452-001, inscrita no Cadastro Nacional de Pessoa Jurídica – CNPJ sob o nº 23.813.779/0001-60, representada na forma de seu estatuto social, doravante denominada como "CONTRATADA".
 
 Têm entre si justo e acordado o presente CONTRATO DE PARCERIA ESTRATÉGICA OXY HACKER, que se regerá pelas cláusulas e condições a seguir:
 
@@ -310,60 +342,44 @@ Têm entre si justo e acordado o presente CONTRATO DE PARCERIA ESTRATÉGICA OXY 
 
 ---
 
-## CLÁUSULA SEGUNDA - DO PAGAMENTO
+## CLÁUSULA SEGUNDA - DAS RESPONSABILIDADES
 
-{{FORMA_PAGAMENTO}}
+2.1. **O2 INC:** Responsável pela governança metodológica do Oxy Hacker e pela disponibilização do SaaS (Plataforma Oxy + Gênio).
 
-**Valor Total:** {{VALOR_TOTAL}}
-
----
-
-## CLÁUSULA TERCEIRA - DAS RESPONSABILIDADES
-
-3.1. **O2 INC:** Responsável pela governança metodológica do Oxy Hacker e pela disponibilização do SaaS (Plataforma Oxy + Gênio).
-
-3.2. **PARCEIRA ESTRATÉGICA:** Responsável integral pelo atendimento, execução e relacionamento com o CLIENTE durante a prestação do serviço de CFO as a Service.
+2.2. **PARCEIRA ESTRATÉGICA:** Responsável integral pelo atendimento, execução e relacionamento com o CLIENTE durante a prestação do serviço de CFO as a Service.
 
 ---
 
-## CLÁUSULA QUARTA - PROPRIEDADE INTELECTUAL
+## CLÁUSULA TERCEIRA - PROPRIEDADE INTELECTUAL
 
-4.1. Todos os métodos, playbooks, materiais, plataformas e marcas relacionados ao programa Oxy Hacker são de propriedade exclusiva da O2 INC.
+3.1. Todos os métodos, playbooks, materiais, plataformas e marcas relacionados ao programa Oxy Hacker são de propriedade exclusiva da O2 INC.
 
-4.2. É vedado à PARCEIRA ESTRATÉGICA ou ao CLIENTE copiar, reproduzir ou utilizar tais ativos fora das condições aqui estabelecidas.
-
----
-
-## CLÁUSULA QUINTA - DA CONFIDENCIALIDADE
-
-5.1. As partes comprometem-se a manter sigilo sobre todas as informações estratégicas e a cumprir integralmente a Lei Geral de Proteção de Dados (Lei nº 13.709/2018).
+3.2. É vedado à PARCEIRA ESTRATÉGICA ou ao CLIENTE copiar, reproduzir ou utilizar tais ativos fora das condições aqui estabelecidas.
 
 ---
 
-## CLÁUSULA SEXTA - DA RESILIÇÃO
+## CLÁUSULA QUARTA - DA CONFIDENCIALIDADE
 
-6.1. O contrato poderá ser rescindido por inadimplemento de qualquer das partes ou por comum acordo, respeitando-se as obrigações já assumidas.
-
----
-
-## CLÁUSULA SÉTIMA - DA LEI APLICÁVEL E FORO
-
-7.1. Este contrato será regido pelas leis da República Federativa do Brasil. Qualquer disputa será submetida ao Foro Central da Cidade de São Paulo - SP.
+4.1. As partes comprometem-se a manter sigilo sobre todas as informações estratégicas e a cumprir integralmente a Lei Geral de Proteção de Dados (Lei nº 13.709/2018).
 
 ---
 
-## OBSERVAÇÕES
+## CLÁUSULA QUINTA - DA RESILIÇÃO
 
-{{OBSERVACOES}}
+5.1. O contrato poderá ser rescindido por inadimplemento de qualquer das partes ou por comum acordo, respeitando-se as obrigações já assumidas.
 
 ---
 
-## DATA E ASSINATURA
+## CLÁUSULA SEXTA - DA LEI APLICÁVEL E FORO
 
-**Local e Data:** São Paulo, {{DATA}}
+6.1. Este contrato será regido pelas leis da República Federativa do Brasil. Qualquer disputa será submetida ao Foro Central da Cidade de São Paulo - SP.
+
+---
+
+São Paulo, {{DIA}} de {{MES}} de 20{{ANO}}
 
 _______________________________
-**PARCEIRA ESTRATÉGICA:** {{CLIENTE}}
+**PARCEIRA ESTRATÉGICA:** {{RAZAO_SOCIAL}}
 CNPJ: {{CNPJ}}
 
 _______________________________
@@ -380,13 +396,33 @@ CPF: _______________ | CPF: _______________
     name: "Pré-COF Parceria Oxy Hacker",
     description: "Contrato de parceria comercial prévio à COF para programa Oxy Hacker",
     createdAt: "Modelo do sistema",
-    content: `# CONTRATO DE PARCERIA COMERCIAL PRÉVIO À COF
+    category: "parceria",
+    content: `# CONTRATO DE PARCERIA COMERCIAL — PRÉ-COF OXY HACKER
 
-Pelo presente instrumento particular, as partes:
+## QUADRO RESUMO
 
-**O2 INC GESTÃO E TECNOLOGIA S.A.**, inscrita no CNPJ sob nº 23.813.779/0001-60, com sede em Porto Alegre/RS, doravante denominada simplesmente "O2 INC" ou "MATRIZ";
+| Campo | Valor |
+|-------|-------|
+| **PARCEIRO** | |
+| Razão Social | {{RAZAO_SOCIAL}} |
+| CNPJ | {{CNPJ}} |
+| Endereço | {{ENDERECO}} |
+| **REPRESENTANTE LEGAL** | |
+| Nome | {{NOME_REPRESENTANTE}} |
+| CPF | {{CPF_REPRESENTANTE}} |
+| E-mail | {{EMAIL_REPRESENTANTE}} |
+| **REMUNERAÇÃO** | |
+| Valor Total | {{VALOR_TOTAL}} |
+| Forma de Pagamento | {{FORMA_PAGAMENTO}} |
+| **VIGÊNCIA** | |
+| Prazo | {{PRAZO_VIGENCIA}} |
+| Rescisão (aviso prévio) | {{PRAZO_RESCISAO}} |
 
-**{{CLIENTE}}**, inscrito no CNPJ sob nº **{{CNPJ}}**, com sede/endereço em **{{ENDERECO_EMPRESA}}**, representada neste ato na forma de seu contrato social, por seu sócio **{{SOCIO}}**, inscrito no CPF sob nº **{{CPF}}**, doravante denominado simplesmente "PARCEIRO";
+---
+
+## Partes
+
+**O2 INC GESTÃO E TECNOLOGIA S.A.**, inscrita no CNPJ sob nº 23.813.779/0001-60, com sede em São Paulo/SP, doravante denominada simplesmente "O2 INC" ou "MATRIZ";
 
 Têm entre si justo e acordado o presente CONTRATO DE PARCERIA COMERCIAL PRÉVIO À COF, que se regerá pelas seguintes cláusulas e condições:
 
@@ -408,10 +444,6 @@ Têm entre si justo e acordado o presente CONTRATO DE PARCERIA COMERCIAL PRÉVIO
 ---
 
 ## CLÁUSULA 2 – DOS DIREITOS ECONÔMICOS
-
-{{FORMA_PAGAMENTO}}
-
-**Valor Total:** {{VALOR_TOTAL}}
 
 O pagamento constitui requisito essencial para a plena validade deste contrato e liberação de acessos.
 
@@ -437,21 +469,11 @@ O pagamento constitui requisito essencial para a plena validade deste contrato e
 
 ---
 
-## OBSERVAÇÕES
-
-{{OBSERVACOES}}
-
----
-
-## DATA E ASSINATURA
-
-**Local e Data:** {{DATA}}
+São Paulo, {{DIA}} de {{MES}} de 20{{ANO}}
 
 _______________________________
-**PARCEIRO:** {{CLIENTE}}
+**PARCEIRO:** {{RAZAO_SOCIAL}}
 CNPJ: {{CNPJ}}
-Representado por: {{SOCIO}}
-CPF: {{CPF}}
 
 _______________________________
 **O2 INC GESTÃO E TECNOLOGIA S.A.**
@@ -462,13 +484,34 @@ _______________________________
     name: "Assessoria M&A - Sell Side",
     description: "Serviços de assessoria para venda de empresa (Sell Side)",
     createdAt: "Modelo do sistema",
-    content: `# INSTRUMENTO PARTICULAR DE PRESTAÇÃO DE SERVIÇOS
+    category: "ma",
+    content: `# CONTRATO DE PRESTAÇÃO DE SERVIÇOS — M&A SELL SIDE
 
-Pelo presente instrumento:
+## QUADRO RESUMO
 
-**{{CLIENTE}}**, sociedade empresária limitada, inscrita no CNPJ sob o nº **{{CNPJ}}**, com sede na **{{ENDERECO_EMPRESA}}** representada neste ato na forma de seu contrato social, por seu sócio **{{SOCIO}}**, brasileiro, empresário, inscrito no CPF sob número **{{CPF}}**, residente e domiciliado na **{{ENDERECO_SOCIO}}**, doravante referida simplesmente como "CONTRATANTE", e de outro lado;
+| Campo | Valor |
+|-------|-------|
+| **CONTRATANTE** | |
+| Razão Social | {{RAZAO_SOCIAL}} |
+| CNPJ | {{CNPJ}} |
+| Endereço | {{ENDERECO}} |
+| **REPRESENTANTE LEGAL** | |
+| Nome | {{NOME_REPRESENTANTE}} |
+| CPF | {{CPF_REPRESENTANTE}} |
+| E-mail | {{EMAIL_REPRESENTANTE}} |
+| **REMUNERAÇÃO** | |
+| Valor Total Mensal | {{VALOR_TOTAL}} |
+| Comissão sobre transação | 3,5% do valor total da venda |
+| Forma de Pagamento | {{FORMA_PAGAMENTO}} |
+| **VIGÊNCIA** | |
+| Prazo | {{PRAZO_VIGENCIA}} |
+| Rescisão (aviso prévio) | {{PRAZO_RESCISAO}} |
 
-**O2 INC GESTÃO E TECNOLOGIA S.A.**, sociedade anônima, com sede na cidade de São Paulo, Estado de São Paulo, na Avenida Brigadeiro Faria Lima, 1811, bairro Jardim Paulista, CEP 01452-001, inscrita no Cadastro Nacional de Pessoa Jurídica – CNPJ sob o nº 23.813.779/0001-60, representada na forma de seu estatuto social, doravante denominada como "CONTRATADA".
+---
+
+## Contratada
+
+O2 INC GESTÃO E TECNOLOGIA S.A., sociedade anônima, com sede na cidade de São Paulo, Estado de São Paulo, na Avenida Brigadeiro Faria Lima, 1811, bairro Jardim Paulista, CEP 01452-001, inscrita no Cadastro Nacional de Pessoa Jurídica – CNPJ sob o nº 23.813.779/0001-60, representada na forma de seu estatuto social, doravante denominada como "CONTRATADA".
 
 ---
 
@@ -499,10 +542,6 @@ Decidem as Partes celebrar este Contrato Particular de Prestação de Serviços.
 
 ## CLÁUSULA SEGUNDA - DA REMUNERAÇÃO
 
-{{FORMA_PAGAMENTO}}
-
-**Valor Total Mensal:** {{VALOR_TOTAL}}
-
 2.2 - Caso ocorra a venda da empresa durante a vigência deste contrato, a CONTRATANTE deverá pagar à CONTRATADA uma comissão correspondente a **3,5%** sobre o valor total da transação.
 
 ---
@@ -513,18 +552,10 @@ Decidem as Partes celebrar este Contrato Particular de Prestação de Serviços.
 
 ---
 
-## OBSERVAÇÕES
-
-{{OBSERVACOES}}
-
----
-
-## DATA E ASSINATURA
-
-**Local e Data:** {{DATA}}
+São Paulo, {{DIA}} de {{MES}} de 20{{ANO}}
 
 _______________________________
-**CONTRATANTE:** {{CLIENTE}}
+**CONTRATANTE:** {{RAZAO_SOCIAL}}
 CNPJ: {{CNPJ}}
 
 _______________________________
@@ -537,13 +568,33 @@ O2 INC GESTÃO E TECNOLOGIA S.A.
     name: "Financial Advisory",
     description: "Serviços de consultoria financeira especializada",
     createdAt: "Modelo do sistema",
-    content: `# INSTRUMENTO PARTICULAR DE PRESTAÇÃO DE SERVIÇOS
+    category: "consultoria",
+    content: `# CONTRATO DE PRESTAÇÃO DE SERVIÇOS — FINANCIAL ADVISORY
 
-Pelo presente instrumento:
+## QUADRO RESUMO
 
-**{{CLIENTE}}**, sociedade empresária limitada, inscrita no CNPJ sob o nº **{{CNPJ}}**, com sede na **{{ENDERECO_EMPRESA}}** representada neste ato na forma de seu contrato social, por seu sócio **{{SOCIO}}**, brasileiro, empresário, inscrito no CPF sob número **{{CPF}}**, residente e domiciliado na **{{ENDERECO_SOCIO}}**, doravante referida simplesmente como "CONTRATANTE", e de outro lado;
+| Campo | Valor |
+|-------|-------|
+| **CONTRATANTE** | |
+| Razão Social | {{RAZAO_SOCIAL}} |
+| CNPJ | {{CNPJ}} |
+| Endereço | {{ENDERECO}} |
+| **REPRESENTANTE LEGAL** | |
+| Nome | {{NOME_REPRESENTANTE}} |
+| CPF | {{CPF_REPRESENTANTE}} |
+| E-mail | {{EMAIL_REPRESENTANTE}} |
+| **REMUNERAÇÃO** | |
+| Valor Total | {{VALOR_TOTAL}} |
+| Forma de Pagamento | {{FORMA_PAGAMENTO}} |
+| **VIGÊNCIA** | |
+| Prazo | {{PRAZO_VIGENCIA}} |
+| Rescisão (aviso prévio) | {{PRAZO_RESCISAO}} |
 
-**O2 INC GESTÃO E TECNOLOGIA S.A.**, sociedade anônima, com sede na cidade de São Paulo, Estado de São Paulo, na Avenida Brigadeiro Faria Lima, 1811, bairro Jardim Paulista, CEP 01452-001, inscrita no Cadastro Nacional de Pessoa Jurídica – CNPJ sob o nº 23.813.779/0001-60, neste ato representada na forma de seu Estatuto Social, doravante denominada simplesmente "CONTRATADA".
+---
+
+## Contratada
+
+O2 INC GESTÃO E TECNOLOGIA S.A., sociedade anônima, com sede na cidade de São Paulo, Estado de São Paulo, na Avenida Brigadeiro Faria Lima, 1811, bairro Jardim Paulista, CEP 01452-001, inscrita no Cadastro Nacional de Pessoa Jurídica – CNPJ sob o nº 23.813.779/0001-60, neste ato representada na forma de seu Estatuto Social, doravante denominada simplesmente "CONTRATADA".
 
 ---
 
@@ -561,9 +612,7 @@ Pelo presente instrumento:
 
 ## CLÁUSULA SEGUNDA - DA REMUNERAÇÃO
 
-{{FORMA_PAGAMENTO}}
-
-**Valor Total:** {{VALOR_TOTAL}}
+{{OBSERVACOES}}
 
 ---
 
@@ -573,18 +622,10 @@ Pelo presente instrumento:
 
 ---
 
-## OBSERVAÇÕES
-
-{{OBSERVACOES}}
-
----
-
-## DATA E ASSINATURA
-
-**Local e Data:** {{DATA}}
+São Paulo, {{DIA}} de {{MES}} de 20{{ANO}}
 
 _______________________________
-**CONTRATANTE:** {{CLIENTE}}
+**CONTRATANTE:** {{RAZAO_SOCIAL}}
 CNPJ: {{CNPJ}}
 
 _______________________________
@@ -597,13 +638,33 @@ O2 INC GESTÃO E TECNOLOGIA S.A.
     name: "CFO Enterprise (Modelo A)",
     description: "Versão alternativa do contrato CFO Enterprise com estrutura simplificada",
     createdAt: "Modelo do sistema",
-    content: `# INSTRUMENTO PARTICULAR DE PRESTAÇÃO DE SERVIÇOS - CFO ENTERPRISE
+    category: "cfo",
+    content: `# CONTRATO DE PRESTAÇÃO DE SERVIÇOS — CFO ENTERPRISE
 
-Pelo presente instrumento:
+## QUADRO RESUMO
 
-**{{CLIENTE}}**, sociedade empresária limitada, inscrita no CNPJ sob o nº **{{CNPJ}}**, com sede na **{{ENDERECO_EMPRESA}}** representada neste ato na forma de seu contrato social, por seu sócio **{{SOCIO}}**, brasileiro, empresário, inscrito no CPF sob número **{{CPF}}**, residente e domiciliado na **{{ENDERECO_SOCIO}}**, doravante referida simplesmente como "CONTRATANTE", e de outro lado;
+| Campo | Valor |
+|-------|-------|
+| **CONTRATANTE** | |
+| Razão Social | {{RAZAO_SOCIAL}} |
+| CNPJ | {{CNPJ}} |
+| Endereço | {{ENDERECO}} |
+| **REPRESENTANTE LEGAL** | |
+| Nome | {{NOME_REPRESENTANTE}} |
+| CPF | {{CPF_REPRESENTANTE}} |
+| E-mail | {{EMAIL_REPRESENTANTE}} |
+| **REMUNERAÇÃO** | |
+| Valor Total | {{VALOR_TOTAL}} |
+| Forma de Pagamento | {{FORMA_PAGAMENTO}} |
+| **VIGÊNCIA** | |
+| Prazo | {{PRAZO_VIGENCIA}} |
+| Rescisão (aviso prévio) | {{PRAZO_RESCISAO}} |
 
-**O2 INC GESTÃO E TECNOLOGIA S.A.**, sociedade anônima, com sede na cidade de São Paulo, Estado de São Paulo, na Avenida Brigadeiro Faria Lima, 1811, bairro Jardim Paulista, CEP 01452-001, inscrita no Cadastro Nacional de Pessoa Jurídica – CNPJ sob o nº 23.813.779/0001-60, neste ato representada na forma de seu Estatuto Social, doravante denominada simplesmente "CONTRATADA".
+---
+
+## Contratada
+
+O2 INC GESTÃO E TECNOLOGIA S.A., sociedade anônima, com sede na cidade de São Paulo, Estado de São Paulo, na Avenida Brigadeiro Faria Lima, 1811, bairro Jardim Paulista, CEP 01452-001, inscrita no Cadastro Nacional de Pessoa Jurídica – CNPJ sob o nº 23.813.779/0001-60, neste ato representada na forma de seu Estatuto Social, doravante denominada simplesmente "CONTRATADA".
 
 ---
 
@@ -622,9 +683,7 @@ Pelo presente instrumento:
 
 ## CLÁUSULA SEGUNDA - DA REMUNERAÇÃO
 
-{{FORMA_PAGAMENTO}}
-
-**Valor Total:** {{VALOR_TOTAL}}
+{{OBSERVACOES}}
 
 ---
 
@@ -634,18 +693,10 @@ Pelo presente instrumento:
 
 ---
 
-## OBSERVAÇÕES
-
-{{OBSERVACOES}}
-
----
-
-## DATA E ASSINATURA
-
-**Local e Data:** São Paulo, {{DATA}}
+São Paulo, {{DIA}} de {{MES}} de 20{{ANO}}
 
 _______________________________
-**CONTRATANTE:** {{CLIENTE}}
+**CONTRATANTE:** {{RAZAO_SOCIAL}}
 CNPJ: {{CNPJ}}
 
 _______________________________
@@ -658,13 +709,33 @@ O2 INC GESTÃO E TECNOLOGIA S.A.
     name: "Contrato Russowski",
     description: "Modelo de contrato padrão Russowski para prestação de serviços",
     createdAt: "Modelo do sistema",
-    content: `# INSTRUMENTO PARTICULAR DE PRESTAÇÃO DE SERVIÇOS
+    category: "generico",
+    content: `# CONTRATO DE PRESTAÇÃO DE SERVIÇOS — MODELO RUSSOWSKI
 
-Pelo presente instrumento:
+## QUADRO RESUMO
 
-**{{CLIENTE}}**, sociedade empresária limitada, inscrita no CNPJ sob o nº **{{CNPJ}}**, com sede na **{{ENDERECO_EMPRESA}}** representada neste ato na forma de seu contrato social, por seu sócio **{{SOCIO}}**, brasileiro, empresário, inscrito no CPF sob número **{{CPF}}**, residente e domiciliado na **{{ENDERECO_SOCIO}}**, doravante referida simplesmente como "CONTRATANTE", e de outro lado;
+| Campo | Valor |
+|-------|-------|
+| **CONTRATANTE** | |
+| Razão Social | {{RAZAO_SOCIAL}} |
+| CNPJ | {{CNPJ}} |
+| Endereço | {{ENDERECO}} |
+| **REPRESENTANTE LEGAL** | |
+| Nome | {{NOME_REPRESENTANTE}} |
+| CPF | {{CPF_REPRESENTANTE}} |
+| E-mail | {{EMAIL_REPRESENTANTE}} |
+| **REMUNERAÇÃO** | |
+| Valor Total | {{VALOR_TOTAL}} |
+| Forma de Pagamento | {{FORMA_PAGAMENTO}} |
+| **VIGÊNCIA** | |
+| Prazo | {{PRAZO_VIGENCIA}} |
+| Rescisão (aviso prévio) | {{PRAZO_RESCISAO}} |
 
-**O2 INC GESTÃO E TECNOLOGIA S.A.**, sociedade anônima, com sede na cidade de São Paulo, Estado de São Paulo, na Avenida Brigadeiro Faria Lima, 1811, bairro Jardim Paulista, CEP 01452-001, inscrita no Cadastro Nacional de Pessoa Jurídica – CNPJ sob o nº 23.813.779/0001-60, neste ato representada na forma de seu Estatuto Social, doravante denominada simplesmente "CONTRATADA".
+---
+
+## Contratada
+
+O2 INC GESTÃO E TECNOLOGIA S.A., sociedade anônima, com sede na cidade de São Paulo, Estado de São Paulo, na Avenida Brigadeiro Faria Lima, 1811, bairro Jardim Paulista, CEP 01452-001, inscrita no Cadastro Nacional de Pessoa Jurídica – CNPJ sob o nº 23.813.779/0001-60, neste ato representada na forma de seu Estatuto Social, doravante denominada simplesmente "CONTRATADA".
 
 ---
 
@@ -676,9 +747,7 @@ Pelo presente instrumento:
 
 ## CLÁUSULA SEGUNDA - DA REMUNERAÇÃO
 
-{{FORMA_PAGAMENTO}}
-
-**Valor Total:** {{VALOR_TOTAL}}
+{{OBSERVACOES}}
 
 ---
 
@@ -688,18 +757,10 @@ Pelo presente instrumento:
 
 ---
 
-## OBSERVAÇÕES
-
-{{OBSERVACOES}}
-
----
-
-## DATA E ASSINATURA
-
-**Local e Data:** {{DATA}}
+São Paulo, {{DIA}} de {{MES}} de 20{{ANO}}
 
 _______________________________
-**CONTRATANTE:** {{CLIENTE}}
+**CONTRATANTE:** {{RAZAO_SOCIAL}}
 CNPJ: {{CNPJ}}
 
 _______________________________
@@ -712,13 +773,33 @@ O2 INC GESTÃO E TECNOLOGIA S.A.
     name: "Parceria Oxy Hacker (Modelo 2)",
     description: "Segunda versão do contrato de parceria estratégica Oxy Hacker",
     createdAt: "Modelo do sistema",
-    content: `# CONTRATO DE PARCERIA ESTRATÉGICA OXY HACKER
+    category: "parceria",
+    content: `# CONTRATO DE PARCERIA ESTRATÉGICA — OXY HACKER V2
 
-Pelo presente instrumento:
+## QUADRO RESUMO
 
-**O2 INC GESTÃO E TECNOLOGIA S.A.**, sociedade anônima, com sede na cidade de São Paulo, Estado de São Paulo, na Avenida Brigadeiro Faria Lima, 1811, bairro Jardim Paulista, CEP 01452-001, inscrita no Cadastro Nacional de Pessoa Jurídica – CNPJ sob o nº 23.813.779/0001-60, representada na forma de seu estatuto social, doravante denominada como "O2 INC".
+| Campo | Valor |
+|-------|-------|
+| **PARCEIRA** | |
+| Razão Social | {{RAZAO_SOCIAL}} |
+| CNPJ | {{CNPJ}} |
+| Endereço | {{ENDERECO}} |
+| **REPRESENTANTE LEGAL** | |
+| Nome | {{NOME_REPRESENTANTE}} |
+| CPF | {{CPF_REPRESENTANTE}} |
+| E-mail | {{EMAIL_REPRESENTANTE}} |
+| **REMUNERAÇÃO** | |
+| Valor Total | {{VALOR_TOTAL}} |
+| Forma de Pagamento | {{FORMA_PAGAMENTO}} |
+| **VIGÊNCIA** | |
+| Prazo | {{PRAZO_VIGENCIA}} |
+| Rescisão (aviso prévio) | {{PRAZO_RESCISAO}} |
 
-**{{CLIENTE}}**, inscrita no CNPJ sob nº **{{CNPJ}}**, com sede em **{{ENDERECO_EMPRESA}}**, representada neste ato por **{{SOCIO}}**, CPF nº **{{CPF}}**, doravante denominada simplesmente "PARCEIRA".
+---
+
+## Contratada
+
+O2 INC GESTÃO E TECNOLOGIA S.A., sociedade anônima, com sede na cidade de São Paulo, Estado de São Paulo, na Avenida Brigadeiro Faria Lima, 1811, bairro Jardim Paulista, CEP 01452-001, inscrita no Cadastro Nacional de Pessoa Jurídica – CNPJ sob o nº 23.813.779/0001-60, representada na forma de seu estatuto social, doravante denominada como "O2 INC".
 
 ---
 
@@ -734,34 +815,18 @@ Pelo presente instrumento:
 
 ---
 
-## CLÁUSULA SEGUNDA - DA REMUNERAÇÃO
+## CLÁUSULA SEGUNDA - DAS RESPONSABILIDADES
 
-{{FORMA_PAGAMENTO}}
+2.1. **O2 INC:** Fornecerá toda a estrutura metodológica e tecnológica.
 
-**Valor Total:** {{VALOR_TOTAL}}
-
----
-
-## CLÁUSULA TERCEIRA - DAS RESPONSABILIDADES
-
-3.1. **O2 INC:** Fornecerá toda a estrutura metodológica e tecnológica.
-
-3.2. **PARCEIRA:** Será responsável pela execução e atendimento aos clientes finais.
+2.2. **PARCEIRA:** Será responsável pela execução e atendimento aos clientes finais.
 
 ---
 
-## OBSERVAÇÕES
-
-{{OBSERVACOES}}
-
----
-
-## DATA E ASSINATURA
-
-**Local e Data:** São Paulo, {{DATA}}
+São Paulo, {{DIA}} de {{MES}} de 20{{ANO}}
 
 _______________________________
-**PARCEIRA:** {{CLIENTE}}
+**PARCEIRA:** {{RAZAO_SOCIAL}}
 CNPJ: {{CNPJ}}
 
 _______________________________
@@ -769,32 +834,63 @@ _______________________________
 `,
   },
 ];
+
 // Available placeholders for templates
 export const availablePlaceholders = [
-  { key: "CLIENTE", label: "Nome da Empresa", category: "empresa" },
-  { key: "CNPJ", label: "CNPJ", category: "empresa" },
-  { key: "ENDERECO_EMPRESA", label: "Endereço da Empresa", category: "empresa" },
-  { key: "SOCIO", label: "Nome do Sócio/Representante", category: "representante" },
-  { key: "NOME_SOCIO", label: "Nome do Sócio (alternativo)", category: "representante" },
-  { key: "CPF", label: "CPF do Representante", category: "representante" },
-  { key: "ENDERECO_SOCIO", label: "Endereço do Sócio", category: "representante" },
-  { key: "ENDERECO_COMPLETO", label: "Endereço Completo da Empresa", category: "empresa" },
-  { key: "RG", label: "RG do Representante", category: "representante" },
-  { key: "EMAIL", label: "E-mail", category: "contato" },
-  { key: "TELEFONE", label: "Telefone", category: "contato" },
-  { key: "VALOR_TOTAL", label: "Valor Total", category: "pagamento" },
-  { key: "VALOR_SETUP", label: "Valor do Setup", category: "pagamento" },
-  { key: "VALOR_MENSALIDADE", label: "Valor da Mensalidade", category: "pagamento" },
-  { key: "VALOR_PARCELA_SETUP", label: "Parcela do Setup (12x)", category: "pagamento" },
-  { key: "FORMA_PAGAMENTO", label: "Forma de Pagamento", category: "pagamento" },
-  { key: "PARCELAS", label: "Parcelas", category: "pagamento" },
-  { key: "DATA", label: "Data de Assinatura", category: "contrato" },
-  { key: "AVISO_PREVIO_DIAS", label: "Dias de Aviso Prévio", category: "contrato" },
-  { key: "AVISO_DIAS", label: "Dias de Aviso (alternativo)", category: "contrato" },
-  { key: "OBSERVACOES", label: "Observações", category: "contrato" },
-  { key: "PRODUTOS", label: "Tabela de Produtos", category: "contrato" },
-  { key: "NOME_TESTEMUNHA1", label: "Nome Testemunha 1", category: "assinatura" },
-  { key: "CPF_TESTEMUNHA1", label: "CPF Testemunha 1", category: "assinatura" },
-  { key: "NOME_TESTEMUNHA2", label: "Nome Testemunha 2", category: "assinatura" },
-  { key: "CPF_TESTEMUNHA2", label: "CPF Testemunha 2", category: "assinatura" },
+  // Empresa / Contratante
+  { key: "RAZAO_SOCIAL", label: "Razão Social", category: "empresa", tooltip: "Nome empresarial completo conforme CNPJ" },
+  { key: "CNPJ", label: "CNPJ", category: "empresa", tooltip: "XX.XXX.XXX/XXXX-XX" },
+  { key: "ENDERECO", label: "Endereço Completo", category: "empresa", tooltip: "Rua, número, bairro, cidade, estado, CEP" },
+  // Representante Legal
+  { key: "NOME_REPRESENTANTE", label: "Nome do Representante", category: "representante", tooltip: "Nome completo do representante legal" },
+  { key: "CPF_REPRESENTANTE", label: "CPF do Representante", category: "representante", tooltip: "XXX.XXX.XXX-XX" },
+  { key: "EMAIL_REPRESENTANTE", label: "E-mail do Representante", category: "representante", tooltip: "E-mail principal de contato" },
+  // Pagamento / Remuneração
+  { key: "VALOR_TOTAL", label: "Valor Total", category: "pagamento", tooltip: "Valor total do contrato em R$" },
+  { key: "VALOR_SETUP", label: "Valor do Setup", category: "pagamento", tooltip: "Valor cobrado pela etapa de setup" },
+  { key: "VALOR_MENSALIDADE", label: "Valor da Mensalidade", category: "pagamento", tooltip: "Valor mensal recorrente" },
+  { key: "VALOR_CFO", label: "Valor CFO as a Service", category: "pagamento", tooltip: "Valor mensal do serviço CFO" },
+  { key: "FORMA_PAGAMENTO", label: "Forma de Pagamento", category: "pagamento", tooltip: "Ex: boleto, cartão, TED" },
+  { key: "FORMA_PAGAMENTO_SETUP", label: "Forma Pgto. Setup", category: "pagamento", tooltip: "Forma de pagamento do setup" },
+  { key: "FORMA_PAGAMENTO_CFO", label: "Forma Pgto. CFO", category: "pagamento", tooltip: "Forma de pagamento do CFO" },
+  { key: "CONDICOES_SETUP", label: "Condições do Setup", category: "pagamento", tooltip: "Condições especiais de pagamento" },
+  { key: "CONDICOES_CFO", label: "Condições do CFO", category: "pagamento", tooltip: "Condições especiais de pagamento" },
+  // Vigência / Contrato
+  { key: "PRAZO_VIGENCIA", label: "Prazo de Vigência", category: "contrato", tooltip: "Ex: 12 meses, 24 meses" },
+  { key: "PRAZO_RESCISAO", label: "Prazo de Rescisão", category: "contrato", tooltip: "Dias de aviso prévio para rescisão" },
+  { key: "AVISO_DIAS", label: "Dias de Aviso Prévio", category: "contrato", tooltip: "Número de dias para aviso prévio" },
+  { key: "DESCRICAO_SERVICOS", label: "Descrição dos Serviços", category: "contrato", tooltip: "Detalhamento do escopo contratado" },
+  { key: "OBSERVACOES", label: "Observações", category: "contrato", tooltip: "Observações adicionais ao contrato" },
+  // Data de Assinatura
+  { key: "DIA", label: "Dia", category: "assinatura", tooltip: "Dia da assinatura (número)" },
+  { key: "MES", label: "Mês", category: "assinatura", tooltip: "Mês da assinatura (por extenso)" },
+  { key: "ANO", label: "Ano", category: "assinatura", tooltip: "Ano da assinatura (2 dígitos)" },
+  // Testemunhas
+  { key: "NOME_TESTEMUNHA1", label: "Nome Testemunha 1", category: "assinatura", tooltip: "Nome completo da primeira testemunha" },
+  { key: "CPF_TESTEMUNHA1", label: "CPF Testemunha 1", category: "assinatura", tooltip: "CPF da primeira testemunha" },
+  { key: "NOME_TESTEMUNHA2", label: "Nome Testemunha 2", category: "assinatura", tooltip: "Nome completo da segunda testemunha" },
+  { key: "CPF_TESTEMUNHA2", label: "CPF Testemunha 2", category: "assinatura", tooltip: "CPF da segunda testemunha" },
+  // Legacy aliases (backwards compat)
+  { key: "CLIENTE", label: "Nome da Empresa (legado)", category: "empresa", tooltip: "Use RAZAO_SOCIAL de preferência" },
+  { key: "SOCIO", label: "Nome do Sócio (legado)", category: "representante", tooltip: "Use NOME_REPRESENTANTE de preferência" },
+  { key: "NOME_SOCIO", label: "Nome do Sócio (alt)", category: "representante", tooltip: "Use NOME_REPRESENTANTE de preferência" },
+  { key: "CPF", label: "CPF (legado)", category: "representante", tooltip: "Use CPF_REPRESENTANTE de preferência" },
+  { key: "ENDERECO_EMPRESA", label: "Endereço Empresa (legado)", category: "empresa", tooltip: "Use ENDERECO de preferência" },
+  { key: "ENDERECO_COMPLETO", label: "Endereço Completo (legado)", category: "empresa", tooltip: "Use ENDERECO de preferência" },
+  { key: "ENDERECO_SOCIO", label: "Endereço do Sócio", category: "representante", tooltip: "Endereço residencial do sócio" },
+  { key: "DATA", label: "Data de Assinatura (legado)", category: "contrato", tooltip: "Use DIA/MES/ANO de preferência" },
+  { key: "EMAIL", label: "E-mail (legado)", category: "contato", tooltip: "Use EMAIL_REPRESENTANTE de preferência" },
+  { key: "TELEFONE", label: "Telefone", category: "contato", tooltip: "Número de telefone para contato" },
+  { key: "RG", label: "RG do Representante", category: "representante", tooltip: "Número do RG" },
 ];
+
+// Template category metadata for UI
+export const templateCategories: Record<string, { label: string; color: string }> = {
+  cfo: { label: "CFO", color: "bg-primary/10 text-primary" },
+  saas: { label: "SaaS", color: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400" },
+  parceria: { label: "Parceria", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
+  ma: { label: "M&A", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
+  consultoria: { label: "Consultoria", color: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400" },
+  educacional: { label: "Educacional", color: "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400" },
+  generico: { label: "Genérico", color: "bg-muted text-muted-foreground" },
+};
