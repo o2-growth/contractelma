@@ -37,7 +37,142 @@ export const defaultTemplates: Template[] = [
 
 ---
 
+## Contratada
+
+O2 INC GESTÃO E TECNOLOGIA S.A., sociedade anônima, inscrita no CNPJ sob nº 23.813.779/0001-60, com sede na Avenida Brigadeiro Faria Lima, 1811, bairro Jardim Paulista, CEP 01452-001, São Paulo/SP, endereço de e-mail cs@o2inc.com.br, doravante designada CONTRATADA.
+
+---
+
+## DESCRITIVO DO SERVIÇO
+
+### Módulo: SETUP
+
+**Duração:** até 90 dias após o kick-off
+
+**Encontros:** Touch point semanal (reunião ou contato telefônico/WhatsApp)
+
+**Encontros obrigatórios:** 4 encontros iniciais para entrevistas e compreensão dos processos
+
+### Entregáveis do SETUP
+
+- a) PLANO DE CONTAS — Análise do Plano de Contas atual, otimizações e suporte técnico para reformulação conforme boas práticas; sugestão de centros de custo/resultado e tags gerenciais; suporte na padronização de lançamentos contábeis recorrentes; revisão periódica com a contabilidade.
+- b) DADOS — Checklist dos processos internos e financeiros; entrevistas de diagnóstico financeiro; identificação de gaps e melhorias imediatas; suporte técnico para adequação dos processos.
+- c) ERP — Análise do sistema de gestão atual (ERP); levantamento de pré-requisitos de integração; identificação de subutilizações e recomendações de melhorias; apoio técnico na parametrização de relatórios financeiros.
+- d) TECNOLOGIA — Integração ERP → Oxy; validação dos dados migrados; liberação de acessos ao ambiente da plataforma.
+
+---
+
+### Módulo: PLATAFORMA OXY + GÊNIO (IA)
+
+- a) Aba DRE: análises vertical, horizontal e mensal; gráficos e comparação entre períodos
+- b) Aba Fluxo de Caixa: análise mensal; curva ABC de entradas e saídas; projeções diárias
+- c) Ciclo Financeiro: indicadores PMP, PME, PMR; análises por cliente/fornecedor
+- d) Planejamento Orçamentário: projeções baseadas em histórico; orçado x realizado
+- e) Agente de IA (Gênio): questionamentos em tempo real; insights instantâneos sobre dados financeiros
+
+---
+
+### Módulo: CFO AS A SERVICE
+
+**Encontros:** 4 encontros por mês (semanais), virtuais, mediante agendamento
+
+### Regras do CFO as a Service
+
+- f) Encontros agendados pela CONTRATANTE conforme disponibilidade da agenda (via link)
+- g) Assessoria financeira ocorre exclusivamente durante os encontros, com base nos dados da Oxy e Gênio
+- h) Não inclui trabalhos manuais, materiais em ferramentas paralelas ou atividades fora dos encontros
+- i) Encontros não comparecidos não são passíveis de reagendamento ou compensação
+- j) Horas não utilizadas no mês não são cumulativas para meses seguintes
+
+**Diretrizes:** A CONTRATADA não se responsabiliza por inconsistências nos dados ou atrasos decorrentes do não cumprimento das ações sugeridas. Recomenda-se dupla verificação dos insights gerados pela IA.
+
+---
+
+## MASTER SERVICE AGREEMENT
+
+### 1. FORMA DE PAGAMENTO
+
+1.1 O SETUP é exigível no ato da assinatura: (a) à vista via TED/boleto; ou (b) 12x cartão de crédito com tarifas inclusas.
+
+1.2 A mensalidade (CFO as a Service) será paga via boleto bancário com vencimento recorrente.
+
+1.3 Em caso de inadimplemento: multa de 2% + juros de 1% ao mês sobre o débito.
+
+1.4 A inadimplência autoriza a suspensão do acesso à Plataforma e uso de medidas legais para recuperação.
+
+1.5 Reajuste anual pelo IPCA ou índice substituto, na data de renovação.
+
+### 2. OBRIGAÇÕES DA CONTRATADA
+
+2.1 Realizar a entrega do escopo contratado do Setup, incluindo integração e parametrização da Plataforma Oxy + Gênio.
+
+2.2 Disponibilizar 4 encontros mensais com CFO dedicado para esclarecimentos, orientações técnicas e análise financeira.
+
+2.3 Assegurar funcionamento e manutenção da Plataforma, incluindo atualizações e correções.
+
+### 3. OBRIGAÇÕES DA CONTRATANTE
+
+3.1 Participar ativamente do Setup, cumprindo prazos, reuniões e atividades definidos no cronograma.
+
+3.2 Seguir instruções, orientações técnicas e boas práticas para utilização da Plataforma.
+
+3.3 Utilizar a plataforma de forma responsável, dentro dos limites contratuais e legais.
+
+3.4 Efetuar os pagamentos nos prazos e condições estabelecidos neste contrato.
+
+### 4. CONFIDENCIALIDADE E PROTEÇÃO DE DADOS
+
+4.1 A CONTRATADA manterá sigilo absoluto sobre todas as informações confidenciais da CONTRATANTE.
+
+4.2 Observância rigorosa da Lei nº 13.709/2018 (LGPD) em relação ao tratamento de dados pessoais.
+
+### 5. RESCISÃO E CANCELAMENTO
+
+5.1 O SETUP é irrevogável e irretratável, não sendo passível de reembolso após contratação.
+
+5.2 Plataforma + CFO podem ser rescindidos mediante aviso prévio de {{PRAZO_RESCISAO}} dias via cs@o2inc.com.br.
+
+5.3 Em qualquer rescisão, não haverá devolução de valores já pagos.
+
+5.4 A rescisão não prejudica direitos legais cabíveis a qualquer das partes.
+
+### 6. NÃO SOLICITAÇÃO
+
+6.1 Durante a vigência e por 2 anos após o término, as PARTES não contratarão sócios, colaboradores ou prestadores da outra PARTE, direta ou indiretamente.
+
+### 7. DISPOSIÇÕES GERAIS
+
+7.1 A invalidade de qualquer disposição não afeta as demais cláusulas deste contrato.
+
+7.2 Alterações só serão válidas se formalizadas por escrito e assinadas por ambas as partes.
+
+7.3 Notificações por cartório, carta registrada ou e-mail com comprovante de recebimento.
+
+7.4 Contrato de natureza civil, sem vínculo empregatício entre as partes.
+
+7.5 Prestação de serviços configura obrigação de meio, não de resultado.
+
+7.6 As PARTES não oferecerão ou aceitarão pagamentos ou vantagens que constituam prática ilegal.
+
+### 8. LEI APLICÁVEL E FORO
+
+8.1 Regido pelas leis do Brasil. Foro: Cidade de São Paulo - SP.
+
+---
+
 São Paulo, {{DIA}} de {{MES}} de 20{{ANO}}
+
+| CONTRATANTE | CONTRATADA |
+|-------------|------------|
+| _______________________________ | _______________________________ |
+| {{RAZAO_SOCIAL}} | O2 INC GESTÃO E TECNOLOGIA S.A. |
+
+### TESTEMUNHAS:
+
+| _______________________________ | _______________________________ |
+|-------------|------------|
+| Nome: {{NOME_TESTEMUNHA1}} | Nome: {{NOME_TESTEMUNHA2}} |
+| CPF: {{CPF_TESTEMUNHA1}} | CPF: {{CPF_TESTEMUNHA2}} |
 `,
   },
   {
