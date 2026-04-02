@@ -1,48 +1,111 @@
 
 
-# Novo Modelo Padrão de Contrato baseado no DOCX
+# Melhorar UI/UX + Padronizar Todos os Templates no Novo Modelo
 
-## Contexto
-O documento DOCX enviado tem formatação profissional com logo O2 INC, QUADRO RESUMO em tabela, cláusulas detalhadas, e bloco de assinatura. A abordagem atual (gerar PDF do zero com operadores PDF) nunca vai reproduzir essa qualidade. A solução correta é usar o próprio DOCX como base.
+## Visão Geral
 
-## Estratégia
-Armazenar o DOCX original como template base no Storage. Na hora de enviar para assinatura, o edge function abre o DOCX (que é um ZIP de XMLs), substitui os marcadores `[preencher]`, `[dia]`, `[mês]`, `[ano]` por valores reais, e envia o DOCX resultante direto para a Autentique -- preservando 100% da formatação original (logo, tabelas, fontes, layout).
+Duas frentes: (1) melhorias visuais e de fluxo em toda a plataforma, e (2) converter todos os 9 templates restantes para o formato QUADRO RESUMO do novo modelo DOCX, mantendo o conteúdo específico de cada contrato.
 
-## Mudanças
+---
 
-### 1. Upload do DOCX para o Storage
-Salvar o template DOCX no bucket `documents` do Storage como template base reutilizável.
+## Parte 1: Melhorias de UI/UX
 
-### 2. Atualizar `contractTemplates.ts` -- template CFO as a Service
-Atualizar o conteúdo markdown do template "CFO Enterprise" para refletir a estrutura do novo DOCX (QUADRO RESUMO com os campos corretos). Os campos editáveis identificados no DOCX:
-- `RAZAO_SOCIAL`, `CNPJ`, `ENDERECO` (contratante)
-- `NOME_REPRESENTANTE`, `CPF_REPRESENTANTE`, `EMAIL_REPRESENTANTE`
-- `DESCRICAO_SERVICOS`
-- `VALOR_SETUP`, `FORMA_PAGAMENTO_SETUP`, `CONDICOES_SETUP`
-- `VALOR_CFO`, `FORMA_PAGAMENTO_CFO`, `CONDICOES_CFO`
+### 1.1 Template Selection (Etapa 1 do Wizard)
+- Adicionar ícones diferenciados por tipo de contrato (parceria, SaaS, M&A, etc.) em vez de todos terem o mesmo `FileText`
+- Mostrar badge com a contagem de campos editáveis em cada card
+- Adicionar busca/filtro rápido quando há muitos templates
+- Melhorar espaçamento e hierarquia visual dos cards
+
+### 1.2 Formulário de Dados (Etapa 2)
+- Adicionar indicador de progresso (campos preenchidos / total) no topo do painel esquerdo
+- Melhorar labels com tooltips explicativos nos campos mais complexos (ex: "PRAZO_RESCISAO" → tooltip "Prazo de aviso prévio para rescisão em dias")
+- Adicionar validação visual inline (CNPJ, CPF, e-mail) com feedback em tempo real
+- Botão "Limpar todos" para resetar o formulário
+
+### 1.3 Preview e Geração (Etapa 3)
+- Melhorar o layout do resumo lateral com cards mais claros
+- Adicionar contagem de campos pendentes (não preenchidos) como alerta visual
+- Melhorar os estados de loading e sucesso com animações mais suaves
+
+### 1.4 Dashboard
+- Adicionar empty state mais convidativo
+- Melhorar responsividade dos stats cards
+
+### 1.5 Navegação Global
+- Adicionar breadcrumbs no wizard para orientação contextual
+- Melhorar transições entre etapas
+
+---
+
+## Parte 2: Padronizar Templates no Novo Modelo
+
+Cada template será convertido para usar a estrutura QUADRO RESUMO no topo, seguido do corpo do contrato. O padrão:
+
+```text
+# CONTRATO DE [TIPO] — [NOME DO SERVIÇO]
+
+## QUADRO RESUMO
+
+| Campo | Valor |
+|-------|-------|
+| **CONTRATANTE** | |
+| Razão Social | {{RAZAO_SOCIAL}} |
+| CNPJ | {{CNPJ}} |
+| Endereço | {{ENDERECO}} |
+| **REPRESENTANTE** | |
+| Nome | {{NOME_REPRESENTANTE}} |
+| CPF | {{CPF_REPRESENTANTE}} |
+| E-mail | {{EMAIL_REPRESENTANTE}} |
+| **REMUNERAÇÃO** | |
+| [campos específicos do contrato] |
+| **VIGÊNCIA** | |
+| Prazo | {{PRAZO_VIGENCIA}} |
+| Rescisão | {{PRAZO_RESCISAO}} |
+
+---
+
+[Corpo do contrato com cláusulas específicas mantidas]
+
+---
+
+São Paulo, {{DIA}} de {{MES}} de 20{{ANO}}
+```
+
+### Templates a converter (9 restantes):
+1. **SaaS Oxy + Gênio + Especialista** — manter cláusulas de setup, plataforma e especialista; remuneração: VALOR_SETUP + VALOR_MENSALIDADE
+2. **Plano Anual Oxigênio Empresarial** — manter cláusulas educacionais; remuneração: VALOR_TOTAL + FORMA_PAGAMENTO
+3. **Parceria Oxy Hacker** — manter cláusulas de parceria; remuneração: VALOR_TOTAL
+4. **Pré-COF Parceria** — manter cláusulas de parceria comercial; remuneração: VALOR_TOTAL
+5. **M&A Sell Side** — manter escopo de venda; remuneração: VALOR_TOTAL + comissão 3.5%
+6. **Financial Advisory** — manter escopo de consultoria; remuneração: VALOR_TOTAL
+7. **CFO Enterprise (Modelo A)** — manter escopo simplificado; remuneração: VALOR_TOTAL
+8. **Contrato Russowski** — manter genérico; remuneração: VALOR_TOTAL
+9. **Parceria Oxy Hacker v2** — manter cláusulas de parceria; remuneração: VALOR_TOTAL
+
+### Atualizar `availablePlaceholders`
+Adicionar os novos campos padronizados ao array de placeholders:
+- `RAZAO_SOCIAL`, `ENDERECO`, `NOME_REPRESENTANTE`, `CPF_REPRESENTANTE`, `EMAIL_REPRESENTANTE`
+- `DIA`, `MES`, `ANO` (substituindo o `DATA` genérico)
 - `PRAZO_VIGENCIA`, `PRAZO_RESCISAO`
-- `DIA`, `MES`, `ANO` (data da assinatura)
+- Manter campos específicos por template (ex: `VALOR_SETUP`, `VALOR_MENSALIDADE`)
 
-### 3. Reescrever o edge function `send-to-autentique`
-Em vez de gerar PDF do zero:
-1. Baixar o DOCX template do Storage
-2. Descompactar (JSZip disponível no Deno)
-3. No XML `word/document.xml`, substituir os marcadores `[preencher]`, `[dia]`, `[mês]`, `[ano]` pelos valores enviados pelo frontend
-4. Recompactar como DOCX
-5. Enviar o DOCX diretamente para a API da Autentique (ela aceita DOCX)
+---
 
-Isso elimina todo o código de geração de PDF manual e garante formatação idêntica ao original.
+## Arquivos Alterados
 
-### 4. Atualizar `SendToSignature` e `ContractPreview`
-Passar os dados do cliente como payload estruturado para o edge function, incluindo mapeamento dos campos do QUADRO RESUMO.
+| Arquivo | Mudança |
+|---------|---------|
+| `src/constants/contractTemplates.ts` | Reescrever os 9 templates + atualizar `availablePlaceholders` |
+| `src/components/wizard/steps/TemplateSelection.tsx` | Ícones diferenciados, badge de campos, filtro |
+| `src/components/wizard/steps/ClientDataImport.tsx` | Barra de progresso, validação inline, tooltips |
+| `src/components/wizard/steps/ContractPreview.tsx` | Layout do resumo, alertas de campos pendentes |
+| `src/components/wizard/ContractWizard.tsx` | Breadcrumbs, transições |
+| `src/pages/Dashboard.tsx` | Empty states, responsividade |
 
-### 5. Atualizar o preview ao vivo (`ContractLivePreview`)
-Adaptar o preview markdown para refletir a nova estrutura com QUADRO RESUMO.
+---
 
-## Detalhes Técnicos
+## Riscos e Mitigação
 
-- **JSZip no Deno**: `import JSZip from "https://esm.sh/jszip@3.10.1"` -- funciona no edge function
-- **Substituição XML**: Os marcadores `[preencher]` no DOCX ficam como texto simples dentro de `<w:t>` tags, facilitando o find-and-replace
-- **Autentique aceita DOCX**: Basta mudar o content-type do upload de `application/pdf` para `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
-- **Storage path**: `templates/base/cfo-as-a-service.docx`
+- **Risco**: Templates com campos diferentes quebrarem o formulário dinâmico → **Mitigação**: O sistema já detecta `{{VAR}}` dinamicamente, então novos campos são auto-descobertos
+- **Risco**: Campos renomeados (ex: `CLIENTE` → `RAZAO_SOCIAL`) quebrarem dados existentes → **Mitigação**: Manter aliases no `availablePlaceholders` e no edge function de substituição
 
