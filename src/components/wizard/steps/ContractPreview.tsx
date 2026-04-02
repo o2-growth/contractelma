@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Download, FileText, Loader2, AlertCircle, Send } from "lucide-react";
+import { Download, FileText, Loader2, AlertCircle, AlertTriangle } from "lucide-react";
 import { SendToSignature } from "./SendToSignature";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -11,12 +11,28 @@ interface ContractPreviewProps {
   contractData: ContractData;
 }
 
+function extractTemplateVars(content: string | undefined): string[] {
+  if (!content) return [];
+  const regex = /\{\{(\w+)\}\}/g;
+  const keys = new Set<string>();
+  let m;
+  while ((m = regex.exec(content)) !== null) keys.add(m[1]);
+  return Array.from(keys);
+}
+
 export function ContractPreview({ contractData }: ContractPreviewProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGenerated, setIsGenerated] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<string | null>(null);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Calculate missing fields
+  const missingFields = useMemo(() => {
+    const allVars = extractTemplateVars(contractData.template?.content);
+    const autoFilled = new Set(["PRODUTOS"]);
+    return allVars.filter((k) => !autoFilled.has(k) && !(contractData.clientData[k] || "").trim());
+  }, [contractData]);
 
   const generateContractLocally = () => {
     const template = contractData.template?.content || getDefaultTemplate();
@@ -26,21 +42,17 @@ export function ContractPreview({ contractData }: ContractPreviewProps) {
   const getDefaultTemplate = () => `# CONTRATO DE PRESTAÇÃO DE SERVIÇOS
 
 ## CONTRATANTE
-**Nome:** {{NOME}}
-**CPF:** {{CPF}}
+**Nome:** {{RAZAO_SOCIAL}}
+**CNPJ:** {{CNPJ}}
 **Endereço:** {{ENDERECO}}
-**Telefone:** {{TELEFONE}}
-**E-mail:** {{EMAIL}}
 
 ---
 
-## DATA E ASSINATURA
-
-{{DATA}}
+São Paulo, {{DIA}} de {{MES}} de 20{{ANO}}
 
 _______________________________
-**Contratante:** {{NOME}}
-CPF: {{CPF}}
+**Contratante:** {{RAZAO_SOCIAL}}
+CNPJ: {{CNPJ}}
 
 _______________________________
 **Contratado**
@@ -104,7 +116,7 @@ _______________________________
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `contrato_${(contractData.clientData.CLIENTE || contractData.clientData.nome || "cliente").replace(/\s+/g, "_")}_${Date.now()}.md`;
+    link.download = `contrato_${(contractData.clientData.RAZAO_SOCIAL || contractData.clientData.CLIENTE || contractData.clientData.nome || "cliente").replace(/\s+/g, "_")}_${Date.now()}.md`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -112,9 +124,8 @@ _______________________________
     toast.success("Download iniciado!");
   };
 
-  const clientName = contractData.clientData.CLIENTE || contractData.clientData.nome || "[NOME DO CLIENTE]";
-  const clientDoc = contractData.clientData.CNPJ || contractData.clientData.CPF || "[CNPJ/CPF]";
-  const clientAddress = contractData.clientData.ENDERECO_COMPLETO || contractData.clientData.ENDERECO_EMPRESA || "[ENDEREÇO]";
+  const clientName = contractData.clientData.RAZAO_SOCIAL || contractData.clientData.CLIENTE || contractData.clientData.nome || "[NOME DO CLIENTE]";
+  const clientDoc = contractData.clientData.CNPJ || contractData.clientData.CPF_REPRESENTANTE || "[CNPJ/CPF]";
 
   return (
     <div>
@@ -155,10 +166,6 @@ _______________________________
                 <span className="rounded bg-highlight px-1 font-mono">
                   {clientDoc}
                 </span>
-                , com sede/domicílio em{" "}
-                <span className="rounded bg-highlight px-1">
-                  {clientAddress}
-                </span>
                 , doravante denominado CONTRATANTE...
               </p>
 
@@ -195,33 +202,51 @@ _______________________________
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="space-y-6"
+          className="space-y-4"
         >
-          <div className="rounded-xl border border-border bg-card p-6">
-            <h3 className="font-display font-semibold text-foreground mb-4">
+          <div className="rounded-xl border border-border bg-card p-5">
+            <h3 className="font-display font-semibold text-foreground mb-3">
               Resumo
             </h3>
-            <div className="space-y-4 text-sm">
+            <div className="space-y-3 text-sm">
               <div>
-                <span className="text-muted-foreground">Cliente:</span>
-                <p className="font-medium text-foreground">
-                  {contractData.clientData.CLIENTE || contractData.clientData.nome || "-"}
+                <span className="text-muted-foreground text-xs uppercase tracking-wider">Cliente</span>
+                <p className="font-medium text-foreground mt-0.5">
+                  {contractData.clientData.RAZAO_SOCIAL || contractData.clientData.CLIENTE || contractData.clientData.nome || "-"}
                 </p>
               </div>
               <div>
-                <span className="text-muted-foreground">Template:</span>
-                <p className="font-medium text-foreground">
+                <span className="text-muted-foreground text-xs uppercase tracking-wider">Template</span>
+                <p className="font-medium text-foreground mt-0.5">
                   {contractData.template?.name || "-"}
                 </p>
               </div>
               <div>
-                <span className="text-muted-foreground">Campos preenchidos:</span>
-                <p className="font-medium text-foreground">
+                <span className="text-muted-foreground text-xs uppercase tracking-wider">Campos preenchidos</span>
+                <p className="font-medium text-foreground mt-0.5">
                   {Object.values(contractData.clientData).filter(v => v.length > 0).length}
                 </p>
               </div>
             </div>
           </div>
+
+          {/* Missing fields warning */}
+          {missingFields.length > 0 && (
+            <div className="rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-4">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                    {missingFields.length} campo(s) não preenchido(s)
+                  </p>
+                  <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                    {missingFields.slice(0, 4).join(", ")}
+                    {missingFields.length > 4 && ` e mais ${missingFields.length - 4}`}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
@@ -235,7 +260,7 @@ _______________________________
             </div>
           )}
 
-          <div className="space-y-3">
+          <div className="space-y-2">
             {!isGenerated ? (
               <Button
                 onClick={handleGenerate}

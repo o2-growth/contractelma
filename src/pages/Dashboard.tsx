@@ -8,7 +8,8 @@ import {
   Clock, 
   TrendingUp,
   ArrowUpRight,
-  Loader2
+  Loader2,
+  Rocket
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -54,19 +55,16 @@ export default function Dashboard() {
         return;
       }
 
-      // Fetch recent contracts
       const { data: contractsData } = await supabase
         .from("contracts")
         .select("id, client_data, status, created_at, template_id")
         .order("created_at", { ascending: false })
         .limit(5);
 
-      // Fetch templates count
       const { data: templatesData } = await supabase
         .from("templates")
         .select("id, name");
 
-      // Count contracts this month
       const startOfMonth = new Date();
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
@@ -135,14 +133,14 @@ export default function Dashboard() {
         </div>
 
         {/* Stats */}
-        <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat, index) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="rounded-xl border border-border bg-card p-6 shadow-card"
+              className="rounded-xl border border-border bg-card p-5 shadow-card"
             >
               <div className="flex items-center justify-between">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -155,11 +153,11 @@ export default function Dashboard() {
                   </span>
                 )}
               </div>
-              <div className="mt-4">
+              <div className="mt-3">
                 <p className="font-mono text-3xl font-bold text-foreground">
                   {isLoading ? "-" : stat.value}
                 </p>
-                <p className="mt-1 text-sm text-muted-foreground">{stat.label}</p>
+                <p className="mt-0.5 text-sm text-muted-foreground">{stat.label}</p>
               </div>
             </motion.div>
           ))}
@@ -172,13 +170,13 @@ export default function Dashboard() {
           >
             <Link
               to="/contract/new"
-              className="flex h-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-card/50 p-6 text-center transition-all duration-normal hover:border-primary hover:bg-primary/5"
+              className="flex h-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-card/50 p-5 text-center transition-all duration-normal hover:border-primary hover:bg-primary/5"
             >
-              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-lg border-2 border-dashed border-current text-muted-foreground transition-colors duration-normal">
-                <FilePlus className="h-6 w-6" />
+              <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg border-2 border-dashed border-current text-muted-foreground transition-colors duration-normal">
+                <FilePlus className="h-5 w-5" />
               </div>
-              <span className="font-medium text-foreground">Novo Contrato</span>
-              <span className="mt-1 text-sm text-muted-foreground">Criar agora</span>
+              <span className="font-medium text-sm text-foreground">Novo Contrato</span>
+              <span className="mt-0.5 text-xs text-muted-foreground">Criar agora</span>
             </Link>
           </motion.div>
 
@@ -189,13 +187,13 @@ export default function Dashboard() {
           >
             <Link
               to="/templates"
-              className="flex h-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-card/50 p-6 text-center transition-all duration-normal hover:border-primary hover:bg-primary/5"
+              className="flex h-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-card/50 p-5 text-center transition-all duration-normal hover:border-primary hover:bg-primary/5"
             >
-              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-lg border-2 border-dashed border-current text-muted-foreground transition-colors duration-normal">
-                <FileText className="h-6 w-6" />
+              <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg border-2 border-dashed border-current text-muted-foreground transition-colors duration-normal">
+                <FileText className="h-5 w-5" />
               </div>
-              <span className="font-medium text-foreground">Templates</span>
-              <span className="mt-1 text-sm text-muted-foreground">Gerenciar</span>
+              <span className="font-medium text-sm text-foreground">Templates</span>
+              <span className="mt-0.5 text-xs text-muted-foreground">Gerenciar</span>
             </Link>
           </motion.div>
         </div>
@@ -225,21 +223,39 @@ export default function Dashboard() {
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : !isLoggedIn ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <FileText className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                <p className="text-muted-foreground">Faça login para ver seus contratos</p>
+              <div className="flex flex-col items-center justify-center py-16 text-center px-6">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-4">
+                  <Rocket className="h-8 w-8" />
+                </div>
+                <h3 className="font-display text-lg font-semibold text-foreground mb-1">
+                  Comece agora
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-sm">
+                  Faça login para acessar seus contratos, templates e todo o histórico de documentos gerados.
+                </p>
               </div>
             ) : contracts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <FileText className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                <p className="text-muted-foreground">Nenhum contrato gerado ainda</p>
-                <Button asChild className="mt-4">
-                  <Link to="/contract/new">Criar primeiro contrato</Link>
+              <div className="flex flex-col items-center justify-center py-16 text-center px-6">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-4">
+                  <FilePlus className="h-8 w-8" />
+                </div>
+                <h3 className="font-display text-lg font-semibold text-foreground mb-1">
+                  Nenhum contrato ainda
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-sm mb-4">
+                  Crie seu primeiro contrato selecionando um template e preenchendo os dados do cliente.
+                </p>
+                <Button asChild>
+                  <Link to="/contract/new" className="gap-2">
+                    <FilePlus className="h-4 w-4" />
+                    Criar primeiro contrato
+                  </Link>
                 </Button>
               </div>
             ) : (
               contracts.map((contract) => {
-                const clientName = (contract.client_data as { nome?: string })?.nome || "Cliente";
+                const clientData = contract.client_data as Record<string, string> | null;
+                const clientName = clientData?.RAZAO_SOCIAL || clientData?.CLIENTE || clientData?.nome || "Cliente";
                 const status = contract.status as keyof typeof statusConfig;
                 const config = statusConfig[status] || statusConfig.draft;
                 

@@ -1,12 +1,14 @@
 import { useState, useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Upload, FileText, User, X, AlertCircle, RefreshCw, Building2, UserCircle, Phone, CreditCard, FileSignature, PenLine } from "lucide-react";
+import { Upload, FileText, User, X, AlertCircle, RefreshCw, Building2, UserCircle, Phone, CreditCard, FileSignature, PenLine, Info, Eraser } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { ClientData, Template } from "../ContractWizard";
@@ -22,16 +24,16 @@ interface ClientDataImportProps {
 
 // Variables that are auto-filled (not shown as fields)
 const AUTO_FILLED_KEYS = new Set([
-  "DATA", "PRODUTOS", "VALOR_TOTAL", "FORMA_PAGAMENTO", "OBSERVACOES", "PARCELAS",
+  "PRODUTOS",
 ]);
 
 const CATEGORY_META: Record<string, { label: string; icon: React.ReactNode }> = {
-  empresa: { label: "Empresa", icon: <Building2 className="h-4 w-4" /> },
+  empresa: { label: "Empresa / Contratante", icon: <Building2 className="h-4 w-4" /> },
   representante: { label: "Representante Legal", icon: <UserCircle className="h-4 w-4" /> },
   contato: { label: "Contato", icon: <Phone className="h-4 w-4" /> },
-  pagamento: { label: "Pagamento", icon: <CreditCard className="h-4 w-4" /> },
-  contrato: { label: "Contrato", icon: <FileSignature className="h-4 w-4" /> },
-  assinatura: { label: "Assinatura / Testemunhas", icon: <PenLine className="h-4 w-4" /> },
+  pagamento: { label: "Remuneração", icon: <CreditCard className="h-4 w-4" /> },
+  contrato: { label: "Vigência e Termos", icon: <FileSignature className="h-4 w-4" /> },
+  assinatura: { label: "Assinatura / Data", icon: <PenLine className="h-4 w-4" /> },
 };
 
 const CATEGORY_ORDER = ["empresa", "representante", "contato", "pagamento", "contrato", "assinatura"];
@@ -54,6 +56,21 @@ interface ExtractedField {
 
 type ExtractedFields = Record<string, ExtractedField>;
 
+// Simple inline validations
+function validateField(key: string, value: string): string | null {
+  if (!value) return null;
+  if (key === "CNPJ" && !/^\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}$/.test(value.replace(/\s/g, ""))) {
+    return "Formato: XX.XXX.XXX/XXXX-XX";
+  }
+  if ((key === "CPF_REPRESENTANTE" || key === "CPF") && !/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/.test(value.replace(/\s/g, ""))) {
+    return "Formato: XXX.XXX.XXX-XX";
+  }
+  if (key.includes("EMAIL") && value.length > 3 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+    return "E-mail inválido";
+  }
+  return null;
+}
+
 export function ClientDataImport({ clientData, onChange, selectedTemplate }: ClientDataImportProps) {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
@@ -75,6 +92,7 @@ export function ClientDataImport({ clientData, onChange, selectedTemplate }: Cli
         key,
         label: ph?.label || key.replace(/_/g, " "),
         category: ph?.category || "contrato",
+        tooltip: ph?.tooltip,
       };
     });
   }, [selectedTemplate]);
@@ -91,6 +109,13 @@ export function ClientDataImport({ clientData, onChange, selectedTemplate }: Cli
       .map((cat) => ({ category: cat, fields: groups[cat] }));
   }, [dynamicFields]);
 
+  // Progress calculation
+  const filledCount = useMemo(() => {
+    return dynamicFields.filter((f) => (clientData[f.key] || "").length > 0).length;
+  }, [dynamicFields, clientData]);
+  const totalFields = dynamicFields.length;
+  const progressPct = totalFields > 0 ? Math.round((filledCount / totalFields) * 100) : 0;
+
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
@@ -99,9 +124,6 @@ export function ClientDataImport({ clientData, onChange, selectedTemplate }: Cli
   }, []);
 
   const extractTextFromFile = async (file: File): Promise<string> => {
-    if (file.type === "text/plain" || file.name.endsWith(".txt")) {
-      return await file.text();
-    }
     return await file.text();
   };
 
@@ -132,12 +154,10 @@ export function ClientDataImport({ clientData, onChange, selectedTemplate }: Cli
       const extracted = data.data as ExtractedFields;
       setExtractedFields(extracted);
 
-      // Map extracted values to clientData
       const newData: ClientData = { ...clientData };
       for (const [key, field] of Object.entries(extracted)) {
         const upperKey = key.toUpperCase();
         if (field.value) newData[upperKey] = field.value;
-        // Also set lowercase version for backwards compat
         if (field.value) newData[key] = field.value;
       }
       onChange(newData);
@@ -171,6 +191,11 @@ export function ClientDataImport({ clientData, onChange, selectedTemplate }: Cli
     onChange({ ...clientData, [key]: value });
   };
 
+  const clearAllFields = () => {
+    onChange({});
+    toast.info("Campos limpos");
+  };
+
   const getConfidenceBadge = (confidence: "high" | "medium" | "low") => {
     switch (confidence) {
       case "high": return <StatusBadge variant="success">Alta</StatusBadge>;
@@ -184,7 +209,6 @@ export function ClientDataImport({ clientData, onChange, selectedTemplate }: Cli
     setExtractedFields({} as ExtractedFields);
   };
 
-  // Render grouped fields form
   const renderDynamicForm = () => {
     if (dynamicFields.length === 0) {
       return (
@@ -195,42 +219,76 @@ export function ClientDataImport({ clientData, onChange, selectedTemplate }: Cli
     }
 
     return (
-      <Accordion type="multiple" defaultValue={groupedFields.map((g) => g.category)} className="space-y-2">
-        {groupedFields.map(({ category, fields }) => {
-          const meta = CATEGORY_META[category] || { label: category, icon: null };
-          return (
-            <AccordionItem key={category} value={category} className="border rounded-lg px-4">
-              <AccordionTrigger className="hover:no-underline">
-                <div className="flex items-center gap-2">
-                  {meta.icon}
-                  <span className="font-display font-semibold">{meta.label}</span>
-                  <span className="text-xs text-muted-foreground">({fields.length})</span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="grid gap-4 sm:grid-cols-2 pb-2">
-                  {fields.map(({ key, label }) => (
-                    <div key={key} className={cn("space-y-2", (key.includes("ENDERECO") || key === "CLIENTE") && "sm:col-span-2")}>
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor={key}>{label}</Label>
-                        {extractedFields?.[key]?.confidence && getConfidenceBadge(extractedFields[key].confidence)}
-                        {extractedFields?.[key.toLowerCase()]?.confidence && !extractedFields?.[key]?.confidence && getConfidenceBadge(extractedFields[key.toLowerCase()].confidence)}
-                      </div>
-                      <Input
-                        id={key}
-                        value={clientData[key] || ""}
-                        onChange={(e) => handleFieldChange(key, e.target.value)}
-                        placeholder={`Digite ${label.toLowerCase()}`}
-                        className={cn((key === "CPF" || key.startsWith("CPF_")) && "font-mono")}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          );
-        })}
-      </Accordion>
+      <TooltipProvider delayDuration={300}>
+        <Accordion type="multiple" defaultValue={groupedFields.map((g) => g.category)} className="space-y-2">
+          {groupedFields.map(({ category, fields }) => {
+            const meta = CATEGORY_META[category] || { label: category, icon: null };
+            const filledInCat = fields.filter((f) => (clientData[f.key] || "").length > 0).length;
+            return (
+              <AccordionItem key={category} value={category} className="border rounded-lg px-4">
+                <AccordionTrigger className="hover:no-underline">
+                  <div className="flex items-center gap-2 flex-1">
+                    {meta.icon}
+                    <span className="font-display font-semibold text-sm">{meta.label}</span>
+                    <span className={cn(
+                      "ml-auto mr-2 text-xs font-medium rounded-full px-2 py-0.5",
+                      filledInCat === fields.length
+                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                        : "bg-muted text-muted-foreground"
+                    )}>
+                      {filledInCat}/{fields.length}
+                    </span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid gap-3 sm:grid-cols-2 pb-2">
+                    {fields.map(({ key, label, tooltip }) => {
+                      const val = clientData[key] || "";
+                      const error = validateField(key, val);
+                      return (
+                        <div key={key} className={cn("space-y-1.5", (key.includes("ENDERECO") || key === "RAZAO_SOCIAL" || key === "OBSERVACOES" || key === "DESCRICAO_SERVICOS") && "sm:col-span-2")}>
+                          <div className="flex items-center gap-1.5">
+                            <Label htmlFor={key} className="text-xs">{label}</Label>
+                            {tooltip && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-[200px] text-xs">
+                                  {tooltip}
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                            {extractedFields?.[key]?.confidence && getConfidenceBadge(extractedFields[key].confidence)}
+                            {extractedFields?.[key.toLowerCase()]?.confidence && !extractedFields?.[key]?.confidence && getConfidenceBadge(extractedFields[key.toLowerCase()].confidence)}
+                          </div>
+                          <Input
+                            id={key}
+                            value={val}
+                            onChange={(e) => handleFieldChange(key, e.target.value)}
+                            placeholder={tooltip || `Digite ${label.toLowerCase()}`}
+                            className={cn(
+                              "h-9 text-sm",
+                              (key === "CPF" || key.startsWith("CPF_") || key === "CNPJ") && "font-mono",
+                              error && "border-destructive focus-visible:ring-destructive"
+                            )}
+                          />
+                          {error && (
+                            <p className="text-[11px] text-destructive flex items-center gap-1">
+                              <AlertCircle className="h-3 w-3" />
+                              {error}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            );
+          })}
+        </Accordion>
+      </TooltipProvider>
     );
   };
 
@@ -238,13 +296,13 @@ export function ClientDataImport({ clientData, onChange, selectedTemplate }: Cli
     <ResizablePanelGroup direction="horizontal" className="min-h-[600px] rounded-xl border border-border">
       {/* Left panel: Form */}
       <ResizablePanel defaultSize={35} minSize={25}>
-        <div className="h-full overflow-y-auto p-6">
-          <div className="mb-6">
-            <h2 className="font-display text-2xl font-bold text-foreground">
+        <div className="h-full overflow-y-auto p-5">
+          <div className="mb-4">
+            <h2 className="font-display text-xl font-bold text-foreground">
               Dados do Contrato
             </h2>
-            <p className="mt-1 text-muted-foreground">
-              Preencha os campos necessários ou faça upload de um documento
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Preencha os campos ou faça upload de um documento
             </p>
           </div>
 
@@ -265,17 +323,16 @@ export function ClientDataImport({ clientData, onChange, selectedTemplate }: Cli
                   className="hidden"
                   onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
                 />
-                <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 font-display text-lg font-semibold text-foreground">
-                  Arraste o documento do cliente aqui
+                <Upload className="mx-auto h-10 w-10 text-muted-foreground" />
+                <h3 className="mt-3 font-display text-base font-semibold text-foreground">
+                  Arraste o documento do cliente
                 </h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  A IA vai extrair automaticamente os dados (PDF, DOCX, TXT, imagens)
+                <p className="mt-1 text-xs text-muted-foreground">
+                  A IA extrai automaticamente os dados (PDF, DOCX, TXT, imagens)
                 </p>
               </div>
 
-              {/* Manual entry button */}
-              <div className="mt-6 text-center">
+              <div className="mt-5 text-center">
                 <Button variant="outline" onClick={openManualEntry} className="gap-2">
                   <User className="h-4 w-4" />
                   Preencher Manualmente
@@ -284,56 +341,80 @@ export function ClientDataImport({ clientData, onChange, selectedTemplate }: Cli
             </motion.div>
           ) : (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              {/* Progress bar */}
+              {totalFields > 0 && (
+                <div className="mb-4 space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">
+                      {filledCount} de {totalFields} campos preenchidos
+                    </span>
+                    <span className={cn(
+                      "font-semibold",
+                      progressPct === 100 ? "text-emerald-600" : "text-foreground"
+                    )}>
+                      {progressPct}%
+                    </span>
+                  </div>
+                  <Progress value={progressPct} className="h-2" />
+                </div>
+              )}
+
               {/* File info bar */}
               {uploadedFile && (
-                <div className="mb-6 rounded-xl border border-border bg-card p-4">
+                <div className="mb-4 rounded-lg border border-border bg-card p-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-8 w-8 text-primary" />
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-6 w-6 text-primary" />
                       <div>
-                        <p className="truncate font-medium text-foreground">{uploadedFile.name}</p>
-                        <p className="text-sm text-muted-foreground">{(uploadedFile.size / 1024).toFixed(1)} KB</p>
+                        <p className="truncate text-sm font-medium text-foreground">{uploadedFile.name}</p>
+                        <p className="text-xs text-muted-foreground">{(uploadedFile.size / 1024).toFixed(1)} KB</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       {extractionError && (
-                        <Button variant="outline" size="sm" onClick={retryExtraction} className="gap-2">
-                          <RefreshCw className="h-4 w-4" />
-                          Tentar Novamente
+                        <Button variant="outline" size="sm" onClick={retryExtraction} className="gap-1 h-7 text-xs">
+                          <RefreshCw className="h-3 w-3" />
+                          Tentar
                         </Button>
                       )}
-                      <Button variant="ghost" size="sm" onClick={removeFile}>
-                        <X className="h-4 w-4" />
+                      <Button variant="ghost" size="sm" onClick={removeFile} className="h-7 w-7 p-0">
+                        <X className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   </div>
                   {extractionError && (
-                    <div className="mt-3 flex items-start gap-2 text-sm text-destructive">
-                      <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                    <div className="mt-2 flex items-start gap-1.5 text-xs text-destructive">
+                      <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                       <span>{extractionError}</span>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Back to upload */}
-              {!uploadedFile && (
-                <div className="mb-4 flex justify-end">
-                  <Button variant="ghost" size="sm" onClick={() => { setShowForm(false); setExtractedFields(null); }}>
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload de documento
+              {/* Top actions */}
+              <div className="mb-3 flex items-center justify-between">
+                {!uploadedFile && (
+                  <Button variant="ghost" size="sm" onClick={() => { setShowForm(false); setExtractedFields(null); }} className="h-7 text-xs gap-1">
+                    <Upload className="h-3 w-3" />
+                    Upload
                   </Button>
-                </div>
-              )}
+                )}
+                {filledCount > 0 && (
+                  <Button variant="ghost" size="sm" onClick={clearAllFields} className="h-7 text-xs gap-1 ml-auto text-muted-foreground hover:text-destructive">
+                    <Eraser className="h-3 w-3" />
+                    Limpar
+                  </Button>
+                )}
+              </div>
 
               {/* Loading skeleton */}
               {isExtracting ? (
-                <div className="space-y-4 rounded-xl border border-border bg-card p-6">
-                  <h3 className="font-display font-semibold text-foreground">Analisando documento com IA...</h3>
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="space-y-2">
-                      <div className="h-4 w-20 animate-shimmer rounded" />
-                      <div className="h-10 w-full animate-shimmer rounded" />
+                <div className="space-y-3 rounded-lg border border-border bg-card p-5">
+                  <h3 className="font-display text-sm font-semibold text-foreground">Analisando documento com IA...</h3>
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="space-y-1.5">
+                      <div className="h-3 w-16 animate-shimmer rounded" />
+                      <div className="h-9 w-full animate-shimmer rounded" />
                     </div>
                   ))}
                 </div>

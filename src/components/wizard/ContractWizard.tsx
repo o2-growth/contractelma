@@ -20,6 +20,7 @@ export interface Template {
   createdAt: string;
   content?: string;
   docxTemplate?: string;
+  category?: string;
 }
 
 export type ClientData = Record<string, string>;
@@ -59,7 +60,7 @@ export function ContractWizard() {
         return contractData.template !== null;
       case 2: {
         const cd = contractData.clientData;
-        return (cd.CLIENTE || cd.nome || "").length > 0;
+        return (cd.RAZAO_SOCIAL || cd.CLIENTE || cd.nome || "").length > 0;
       }
       default:
         return true;
