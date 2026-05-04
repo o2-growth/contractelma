@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          changed_fields: Json | null
+          created_at: string
+          entity_id: string
+          entity_owner_id: string
+          entity_snapshot: Json | null
+          entity_type: string
+          id: string
+          new_values: Json | null
+          old_values: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          changed_fields?: Json | null
+          created_at?: string
+          entity_id: string
+          entity_owner_id: string
+          entity_snapshot?: Json | null
+          entity_type: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          changed_fields?: Json | null
+          created_at?: string
+          entity_id?: string
+          entity_owner_id?: string
+          entity_snapshot?: Json | null
+          entity_type?: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       contracts: {
         Row: {
           client_data: Json
