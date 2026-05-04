@@ -6,7 +6,8 @@ import {
   Clock, 
   Settings,
   FileCheck,
-  Home
+  Home,
+  ShieldCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +19,7 @@ const navigation = [
   { name: "Novo Contrato", href: "/contract/new", icon: FilePlus },
   { name: "Templates", href: "/templates", icon: FileText },
   { name: "Histórico", href: "/history", icon: Clock },
+  { name: "Auditoria", href: "/auditoria", icon: ShieldCheck },
   { name: "Configurações", href: "/settings", icon: Settings },
 ];
 
