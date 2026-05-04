@@ -87,32 +87,6 @@ export default function AuditLog() {
 
   useEffect(() => { load(); }, []);
 
-  if (isSuperAdmin === false) {
-    return (
-      <AppLayout>
-        <div className="mx-auto flex max-w-xl flex-col items-center justify-center p-12 text-center">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-            <ShieldAlert className="h-7 w-7" />
-          </div>
-          <h1 className="font-display text-2xl font-bold text-foreground">Acesso restrito</h1>
-          <p className="mt-2 text-muted-foreground">
-            Esta área é exclusiva para super administradores. Caso precise de acesso, contate o responsável pela plataforma.
-          </p>
-        </div>
-      </AppLayout>
-    );
-  }
-
-  if (isSuperAdmin === null) {
-    return (
-      <AppLayout>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </AppLayout>
-    );
-  }
-
   const filtered = useMemo(() => {
     return logs.filter((l) => {
       if (entityFilter !== "all" && l.entity_type !== entityFilter) return false;
