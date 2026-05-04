@@ -8,6 +8,8 @@ import NewContract from "./pages/NewContract";
 import Templates from "./pages/Templates";
 import History from "./pages/History";
 import AuditLog from "./pages/AuditLog";
+import Auth from "./pages/Auth";
+import { RequireAuth } from "./components/auth/RequireAuth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -19,11 +21,12 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/contract/new" element={<NewContract />} />
-          <Route path="/templates" element={<Templates />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/auditoria" element={<AuditLog />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/" element={<RequireAuth><Dashboard /></RequireAuth>} />
+          <Route path="/contract/new" element={<RequireAuth><NewContract /></RequireAuth>} />
+          <Route path="/templates" element={<RequireAuth><Templates /></RequireAuth>} />
+          <Route path="/history" element={<RequireAuth><History /></RequireAuth>} />
+          <Route path="/auditoria" element={<RequireAuth><AuditLog /></RequireAuth>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
