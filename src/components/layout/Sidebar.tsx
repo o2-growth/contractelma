@@ -13,13 +13,13 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useRole } from "@/hooks/use-role";
 
-const navigation = [
+const baseNavigation = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "Novo Contrato", href: "/contract/new", icon: FilePlus },
   { name: "Templates", href: "/templates", icon: FileText },
   { name: "Histórico", href: "/history", icon: Clock },
-  { name: "Auditoria", href: "/auditoria", icon: ShieldCheck },
   { name: "Configurações", href: "/settings", icon: Settings },
 ];
 
@@ -32,6 +32,15 @@ interface RecentContract {
 export function Sidebar() {
   const location = useLocation();
   const [recentContracts, setRecentContracts] = useState<RecentContract[]>([]);
+  const isSuperAdmin = useRole("super_admin");
+
+  const navigation = isSuperAdmin
+    ? [
+        ...baseNavigation.slice(0, 4),
+        { name: "Auditoria", href: "/auditoria", icon: ShieldCheck },
+        ...baseNavigation.slice(4),
+      ]
+    : baseNavigation;
 
   useEffect(() => {
     const fetchRecentContracts = async () => {
