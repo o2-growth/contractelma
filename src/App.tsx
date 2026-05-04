@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard";
 import NewContract from "./pages/NewContract";
 import Templates from "./pages/Templates";
 import History from "./pages/History";
+import AuditLog from "./pages/AuditLog";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/contract/new" element={<NewContract />} />
           <Route path="/templates" element={<Templates />} />
           <Route path="/history" element={<History />} />
+          <Route path="/auditoria" element={<AuditLog />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -1,111 +1,85 @@
+# Sistema de Auditoria e Histórico de Edições
 
+## Objetivo
+Registrar todas as alterações feitas em **contratos** e **templates** (criação, edição, exclusão), permitindo:
+- Visualizar quem alterou o quê e quando
+- Ver o estado anterior de cada campo
+- **Reverter** uma alteração específica (restaurar versão anterior)
 
-# Melhorar UI/UX + Padronizar Todos os Templates no Novo Modelo
-
-## Visão Geral
-
-Duas frentes: (1) melhorias visuais e de fluxo em toda a plataforma, e (2) converter todos os 9 templates restantes para o formato QUADRO RESUMO do novo modelo DOCX, mantendo o conteúdo específico de cada contrato.
-
----
-
-## Parte 1: Melhorias de UI/UX
-
-### 1.1 Template Selection (Etapa 1 do Wizard)
-- Adicionar ícones diferenciados por tipo de contrato (parceria, SaaS, M&A, etc.) em vez de todos terem o mesmo `FileText`
-- Mostrar badge com a contagem de campos editáveis em cada card
-- Adicionar busca/filtro rápido quando há muitos templates
-- Melhorar espaçamento e hierarquia visual dos cards
-
-### 1.2 Formulário de Dados (Etapa 2)
-- Adicionar indicador de progresso (campos preenchidos / total) no topo do painel esquerdo
-- Melhorar labels com tooltips explicativos nos campos mais complexos (ex: "PRAZO_RESCISAO" → tooltip "Prazo de aviso prévio para rescisão em dias")
-- Adicionar validação visual inline (CNPJ, CPF, e-mail) com feedback em tempo real
-- Botão "Limpar todos" para resetar o formulário
-
-### 1.3 Preview e Geração (Etapa 3)
-- Melhorar o layout do resumo lateral com cards mais claros
-- Adicionar contagem de campos pendentes (não preenchidos) como alerta visual
-- Melhorar os estados de loading e sucesso com animações mais suaves
-
-### 1.4 Dashboard
-- Adicionar empty state mais convidativo
-- Melhorar responsividade dos stats cards
-
-### 1.5 Navegação Global
-- Adicionar breadcrumbs no wizard para orientação contextual
-- Melhorar transições entre etapas
+## Sobre o GitHub
+O GitHub conectado já versiona o **código** da plataforma — então alterações de código já têm histórico/rollback nativo (via aba History do Lovable ou git). Esta auditoria foca nos **dados** (contratos e templates editados pelos usuários dentro da plataforma), que o GitHub não cobre.
 
 ---
 
-## Parte 2: Padronizar Templates no Novo Modelo
+## Parte 1: Banco de Dados
 
-Cada template será convertido para usar a estrutura QUADRO RESUMO no topo, seguido do corpo do contrato. O padrão:
+Criar tabela `audit_logs`:
 
-```text
-# CONTRATO DE [TIPO] — [NOME DO SERVIÇO]
+| Coluna | Tipo | Descrição |
+|---|---|---|
+| `id` | uuid PK | |
+| `user_id` | uuid | quem fez a alteração |
+| `entity_type` | text | `contract` ou `template` |
+| `entity_id` | uuid | id do registro alterado |
+| `action` | text | `create`, `update`, `delete` |
+| `changed_fields` | jsonb | array de campos alterados (ex: `["status","client_data"]`) |
+| `old_values` | jsonb | snapshot dos valores antigos (apenas dos campos alterados) |
+| `new_values` | jsonb | snapshot dos novos valores |
+| `entity_snapshot` | jsonb | snapshot completo do registro (para restaurar) |
+| `created_at` | timestamptz | |
 
-## QUADRO RESUMO
+**RLS**: usuário só lê logs das próprias entidades. Inserção feita por triggers (bypass de RLS).
 
-| Campo | Valor |
-|-------|-------|
-| **CONTRATANTE** | |
-| Razão Social | {{RAZAO_SOCIAL}} |
-| CNPJ | {{CNPJ}} |
-| Endereço | {{ENDERECO}} |
-| **REPRESENTANTE** | |
-| Nome | {{NOME_REPRESENTANTE}} |
-| CPF | {{CPF_REPRESENTANTE}} |
-| E-mail | {{EMAIL_REPRESENTANTE}} |
-| **REMUNERAÇÃO** | |
-| [campos específicos do contrato] |
-| **VIGÊNCIA** | |
-| Prazo | {{PRAZO_VIGENCIA}} |
-| Rescisão | {{PRAZO_RESCISAO}} |
+**Triggers automáticos** em `contracts` e `templates`:
+- `AFTER INSERT` → registra `create` com `entity_snapshot`
+- `AFTER UPDATE` → calcula campos alterados, registra `update` com `old_values`/`new_values`/`entity_snapshot` (do estado anterior)
+- `AFTER DELETE` → registra `delete` com snapshot completo
 
----
-
-[Corpo do contrato com cláusulas específicas mantidas]
+Trigger usa `auth.uid()` para capturar o usuário automaticamente.
 
 ---
 
-São Paulo, {{DIA}} de {{MES}} de 20{{ANO}}
-```
+## Parte 2: Interface
 
-### Templates a converter (9 restantes):
-1. **SaaS Oxy + Gênio + Especialista** — manter cláusulas de setup, plataforma e especialista; remuneração: VALOR_SETUP + VALOR_MENSALIDADE
-2. **Plano Anual Oxigênio Empresarial** — manter cláusulas educacionais; remuneração: VALOR_TOTAL + FORMA_PAGAMENTO
-3. **Parceria Oxy Hacker** — manter cláusulas de parceria; remuneração: VALOR_TOTAL
-4. **Pré-COF Parceria** — manter cláusulas de parceria comercial; remuneração: VALOR_TOTAL
-5. **M&A Sell Side** — manter escopo de venda; remuneração: VALOR_TOTAL + comissão 3.5%
-6. **Financial Advisory** — manter escopo de consultoria; remuneração: VALOR_TOTAL
-7. **CFO Enterprise (Modelo A)** — manter escopo simplificado; remuneração: VALOR_TOTAL
-8. **Contrato Russowski** — manter genérico; remuneração: VALOR_TOTAL
-9. **Parceria Oxy Hacker v2** — manter cláusulas de parceria; remuneração: VALOR_TOTAL
+### 2.1 Nova página `/auditoria` (Histórico de Alterações)
+- Lista cronológica de todos os logs do usuário
+- Filtros: tipo (contrato/template), ação (criar/editar/excluir), período
+- Cada item mostra: ícone da ação, nome da entidade, campos alterados, data/hora
+- Ao clicar → abre painel lateral com **diff** (antes vs depois) campo a campo
 
-### Atualizar `availablePlaceholders`
-Adicionar os novos campos padronizados ao array de placeholders:
-- `RAZAO_SOCIAL`, `ENDERECO`, `NOME_REPRESENTANTE`, `CPF_REPRESENTANTE`, `EMAIL_REPRESENTANTE`
-- `DIA`, `MES`, `ANO` (substituindo o `DATA` genérico)
-- `PRAZO_VIGENCIA`, `PRAZO_RESCISAO`
-- Manter campos específicos por template (ex: `VALOR_SETUP`, `VALOR_MENSALIDADE`)
+### 2.2 Botão "Restaurar esta versão"
+- Disponível em logs de `update` e `delete`
+- Confirmação antes de aplicar
+- Restaura usando `entity_snapshot` (cria um novo log de `update` com a restauração)
+- Para `delete`: re-cria o registro com mesmo id
+
+### 2.3 Aba "Histórico" dentro do contrato/template
+- Ao abrir um contrato existente, nova aba mostra apenas os logs daquela entidade
+- Mesma funcionalidade de diff e restauração
+
+### 2.4 Sidebar
+- Adicionar item "Auditoria" no menu lateral (`Sidebar.tsx`)
 
 ---
 
-## Arquivos Alterados
+## Arquivos a criar/editar
 
 | Arquivo | Mudança |
-|---------|---------|
-| `src/constants/contractTemplates.ts` | Reescrever os 9 templates + atualizar `availablePlaceholders` |
-| `src/components/wizard/steps/TemplateSelection.tsx` | Ícones diferenciados, badge de campos, filtro |
-| `src/components/wizard/steps/ClientDataImport.tsx` | Barra de progresso, validação inline, tooltips |
-| `src/components/wizard/steps/ContractPreview.tsx` | Layout do resumo, alertas de campos pendentes |
-| `src/components/wizard/ContractWizard.tsx` | Breadcrumbs, transições |
-| `src/pages/Dashboard.tsx` | Empty states, responsividade |
+|---|---|
+| Migração SQL | nova tabela `audit_logs` + triggers |
+| `src/pages/AuditLog.tsx` | nova página de auditoria |
+| `src/components/audit/AuditDiffPanel.tsx` | painel de diff lateral |
+| `src/components/audit/AuditList.tsx` | lista de eventos reutilizável |
+| `src/components/audit/RestoreButton.tsx` | botão + confirmação de restauração |
+| `src/components/layout/Sidebar.tsx` | item "Auditoria" |
+| `src/App.tsx` | rota `/auditoria` |
+| `src/integrations/supabase/types.ts` | regenera automaticamente |
 
 ---
 
-## Riscos e Mitigação
-
-- **Risco**: Templates com campos diferentes quebrarem o formulário dinâmico → **Mitigação**: O sistema já detecta `{{VAR}}` dinamicamente, então novos campos são auto-descobertos
-- **Risco**: Campos renomeados (ex: `CLIENTE` → `RAZAO_SOCIAL`) quebrarem dados existentes → **Mitigação**: Manter aliases no `availablePlaceholders` e no edge function de substituição
-
+## Notas técnicas
+- Os triggers rodam com `SECURITY DEFINER` para conseguir inserir em `audit_logs` ignorando RLS
+- `auth.uid()` dentro do trigger captura o usuário autenticado da sessão atual
+- `entity_snapshot` guarda o registro **antes** da alteração, então restaurar = aplicar esse snapshot de volta
+- Restauração feita via `UPDATE` normal do client (que por sua vez gera novo log) — mantém a trilha íntegra
+- Não precisa de Edge Function: tudo via triggers + queries diretas com RLS
