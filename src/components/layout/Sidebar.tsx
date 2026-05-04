@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { 
   FilePlus, 
@@ -7,7 +7,8 @@ import {
   Settings,
   FileCheck,
   Home,
-  ShieldCheck
+  ShieldCheck,
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +32,7 @@ interface RecentContract {
 
 export function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [recentContracts, setRecentContracts] = useState<RecentContract[]>([]);
   const isSuperAdmin = useRole("super_admin");
 
@@ -132,6 +134,20 @@ export function Sidebar() {
             </div>
           </div>
         )}
+
+        {/* Logout */}
+        <div className="border-t border-sidebar-border p-3">
+          <button
+            onClick={async () => {
+              await supabase.auth.signOut();
+              navigate("/auth", { replace: true });
+            }}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 transition-all hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          >
+            <LogOut className="h-5 w-5" />
+            Sair
+          </button>
+        </div>
       </div>
     </aside>
   );
