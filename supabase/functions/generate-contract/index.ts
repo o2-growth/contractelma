@@ -15,15 +15,17 @@ interface Product {
 }
 
 interface ClientData {
-  nome: string;
-  cpf: string;
+  nome?: string;
+  cpf?: string;
   rg?: string;
-  endereco: string;
-  telefone: string;
-  email: string;
+  endereco?: string;
+  telefone?: string;
+  email?: string;
   nascimento?: string;
   estado_civil?: string;
   profissao?: string;
+  // Any other dynamic placeholder key (e.g. razao_social, cnpj, valor_plataforma, dias_rescisao, etc.)
+  [key: string]: string | undefined;
 }
 
 interface ContractRequest {
@@ -147,7 +149,19 @@ function replacePlaceholders(
   for (const [placeholder, value] of Object.entries(replacements)) {
     result = result.replaceAll(placeholder, value);
   }
-  
+
+  // Dynamic fallback: substitute any other key in clientData using all 3 cases
+  // (original, UPPER, lower). Lets templates use arbitrary snake_case placeholders
+  // like {{razao_social}}, {{valor_plataforma}}, {{dias_rescisao}}, etc.
+  for (const [rawKey, rawValue] of Object.entries(clientData as Record<string, string | undefined>)) {
+    if (rawValue === undefined || rawValue === null) continue;
+    const value = String(rawValue);
+    const variants = new Set([rawKey, rawKey.toUpperCase(), rawKey.toLowerCase()]);
+    for (const v of variants) {
+      result = result.replaceAll(`{{${v}}}`, value);
+    }
+  }
+
   return result;
 }
 
@@ -278,7 +292,8 @@ _______________________________
 
     // For now, return the filled markdown content
     // In the future, we can generate actual DOCX/PDF files
-    const fileName = `contrato_${clientData.nome.replace(/\s+/g, "_")}_${Date.now()}`;
+    const contractLabel = (clientData.razao_social || clientData.nome || clientData.cliente || "cliente").toString().replace(/\s+/g, "_");
+    const fileName = `contrato_${contractLabel}_${Date.now()}`;
 
     // Create a simple text file for download
     const textContent = filledContract;
