@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.send-to-autentique]
 verify_jwt = false
+
+[functions.render-contract-docx]
+verify_jwt = false
