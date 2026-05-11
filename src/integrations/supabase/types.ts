@@ -64,6 +64,9 @@ export type Database = {
           id: string
           payment_terms: string | null
           pdf_file_url: string | null
+          pipefy_card_id: string | null
+          pipefy_data: Json | null
+          pipefy_phase_id: string | null
           products: Json
           special_notes: string | null
           status: string
@@ -78,6 +81,9 @@ export type Database = {
           id?: string
           payment_terms?: string | null
           pdf_file_url?: string | null
+          pipefy_card_id?: string | null
+          pipefy_data?: Json | null
+          pipefy_phase_id?: string | null
           products?: Json
           special_notes?: string | null
           status?: string
@@ -92,6 +98,9 @@ export type Database = {
           id?: string
           payment_terms?: string | null
           pdf_file_url?: string | null
+          pipefy_card_id?: string | null
+          pipefy_data?: Json | null
+          pipefy_phase_id?: string | null
           products?: Json
           special_notes?: string | null
           status?: string
