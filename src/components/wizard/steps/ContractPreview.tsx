@@ -1,12 +1,13 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Download, FileText, Loader2, AlertCircle, AlertTriangle, FileType } from "lucide-react";
+import { Download, FileText, Loader2, AlertCircle, AlertTriangle, FileType, Eye } from "lucide-react";
 import { SendToSignature } from "./SendToSignature";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import type { ContractData } from "../ContractWizard";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import mammoth from "mammoth";
 
 interface ContractPreviewProps {
   contractData: ContractData;
@@ -28,6 +29,12 @@ export function ContractPreview({ contractData }: ContractPreviewProps) {
   const [generatedContent, setGeneratedContent] = useState<string | null>(null);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Preview HTML do DOCX (renderizado via mammoth.js) e bytes pra reaproveitar no download
+  const [docxHtml, setDocxHtml] = useState<string | null>(null);
+  const [docxBytes, setDocxBytes] = useState<Uint8Array | null>(null);
+  const [docxFileName, setDocxFileName] = useState<string | null>(null);
+  const [isRenderingDocx, setIsRenderingDocx] = useState(false);
 
   const hasDocxTemplate = Boolean(contractData.template?.docxTemplate);
 
@@ -96,12 +103,70 @@ _______________________________
     setError(null);
 
     try {
+      // 1. Geração local em markdown (rápida) sempre acontece
       const content = generateContractLocally();
       setGeneratedContent(content);
       setDownloadUrl("local");
       setIsGenerated(true);
+
+      // 2. Se houver docxTemplate, também renderiza o DOCX preenchido pra preview e download
+      const docxTemplate = contractData.template?.docxTemplate;
+      if (docxTemplate) {
+        setIsRenderingDocx(true);
+        try {
+          const { data, error: fnError } = await supabase.functions.invoke(
+            "render-contract-docx",
+            {
+              body: {
+                docxTemplate,
+                clientData: contractData.clientData,
+                contractName: `contrato_${getClientLabel()}`,
+              },
+            }
+          );
+
+          if (fnError) throw new Error(fnError.message || "Falha na edge function");
+          if (!data?.success) throw new Error(data?.error || "Falha ao renderizar DOCX");
+          if (!data.base64) throw new Error("DOCX vazio retornado");
+
+          // Decode base64 → bytes
+          const binaryStr = atob(data.base64);
+          const bytes = new Uint8Array(binaryStr.length);
+          for (let i = 0; i < binaryStr.length; i++) {
+            bytes[i] = binaryStr.charCodeAt(i);
+          }
+          setDocxBytes(bytes);
+          setDocxFileName(data.fileName || `contrato_${getClientLabel()}_${Date.now()}.docx`);
+
+          // Renderizar HTML via mammoth (para preview na tela)
+          const arrayBuffer = bytes.buffer.slice(
+            bytes.byteOffset,
+            bytes.byteOffset + bytes.byteLength
+          ) as ArrayBuffer;
+          const result = await mammoth.convertToHtml(
+            { arrayBuffer },
+            {
+              styleMap: [
+                "p[style-name='Heading 1'] => h1.docx-h1:fresh",
+                "p[style-name='Heading 2'] => h2.docx-h2:fresh",
+                "p[style-name='Heading 3'] => h3.docx-h3:fresh",
+              ],
+            }
+          );
+          setDocxHtml(result.value);
+        } catch (renderErr) {
+          console.error("Erro ao renderizar preview DOCX:", renderErr);
+          // Não bloqueia — markdown continua funcionando
+          toast.warning("Preview com design indisponível — usando markdown", {
+            description: renderErr instanceof Error ? renderErr.message : "tente novamente",
+          });
+        } finally {
+          setIsRenderingDocx(false);
+        }
+      }
+
       toast.success("Contrato gerado com sucesso!", {
-        description: "Clique em baixar para salvar o arquivo.",
+        description: "Use os botões para baixar o DOCX ou markdown.",
       });
     } catch (err) {
       console.error("Generate error:", err);
@@ -137,50 +202,30 @@ _______________________________
   };
 
   const handleDownloadDocx = async () => {
-    const docxTemplate = contractData.template?.docxTemplate;
-    if (!docxTemplate) {
-      toast.error("Este template não tem DOCX oficial — use o markdown");
+    if (!docxBytes || !docxFileName) {
+      toast.error("DOCX ainda não disponível — clique em Gerar Contrato primeiro");
       return;
     }
 
     setIsDownloadingDocx(true);
     try {
-      const { data, error: fnError } = await supabase.functions.invoke(
-        "render-contract-docx",
-        {
-          body: {
-            docxTemplate,
-            clientData: contractData.clientData,
-            contractName: `contrato_${getClientLabel()}`,
-          },
-        }
-      );
-
-      if (fnError) throw new Error(fnError.message || "Falha na edge function");
-      if (!data?.success) throw new Error(data?.error || "Falha ao renderizar DOCX");
-      if (!data.base64) throw new Error("DOCX vazio retornado pela edge function");
-
-      // Decode base64 → Blob → download
-      const binaryStr = atob(data.base64);
-      const bytes = new Uint8Array(binaryStr.length);
-      for (let i = 0; i < binaryStr.length; i++) {
-        bytes[i] = binaryStr.charCodeAt(i);
-      }
-      const blob = new Blob([bytes], { type: data.mimeType });
+      const blob = new Blob([docxBytes], {
+        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = data.fileName || `contrato_${getClientLabel()}_${Date.now()}.docx`;
+      link.download = docxFileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-
       toast.success("DOCX baixado com design preservado!");
     } catch (err) {
       console.error("Erro ao baixar DOCX:", err);
-      const msg = err instanceof Error ? err.message : "Erro desconhecido";
-      toast.error("Erro ao baixar DOCX", { description: msg });
+      toast.error("Erro ao baixar DOCX", {
+        description: err instanceof Error ? err.message : "tente novamente",
+      });
     } finally {
       setIsDownloadingDocx(false);
     }
@@ -213,49 +258,92 @@ _______________________________
             </span>
           </div>
 
-          <div className="p-8 max-h-[600px] overflow-y-auto">
-            <div className="prose prose-sm max-w-none">
-              <h1 className="text-center font-display text-xl font-bold uppercase tracking-wide">
-                Contrato de Prestação de Serviços
-              </h1>
-
-              <p className="mt-6 text-justify leading-relaxed">
-                Pelo presente instrumento particular, de um lado{" "}
-                <span className="rounded bg-highlight px-1 font-semibold">
-                  {clientName}
-                </span>
-                , inscrito no CNPJ/CPF sob o nº{" "}
-                <span className="rounded bg-highlight px-1 font-mono">
-                  {clientDoc}
-                </span>
-                , doravante denominado CONTRATANTE...
-              </p>
-
-              {/* Display all filled client data */}
-              <h2 className="mt-8 font-display text-lg font-semibold">
-                Dados Preenchidos
-              </h2>
-              <div className="my-4 rounded-lg border border-border overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted">
-                    <tr>
-                      <th className="px-4 py-2 text-left font-medium">Campo</th>
-                      <th className="px-4 py-2 text-left font-medium">Valor</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {Object.entries(contractData.clientData)
-                      .filter(([, value]) => value.length > 0)
-                      .map(([key, value], i) => (
-                        <tr key={key} className={i % 2 === 1 ? "bg-muted/30" : ""}>
-                          <td className="px-4 py-2 font-medium">{key}</td>
-                          <td className="px-4 py-2">{value}</td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
+          <div className="p-8 max-h-[800px] overflow-y-auto bg-muted/20">
+            {/* Loading enquanto a edge function processa o DOCX */}
+            {isRenderingDocx && (
+              <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">
+                  Renderizando contrato com design O2…
+                </p>
               </div>
-            </div>
+            )}
+
+            {/* Preview com design (HTML do DOCX via mammoth) — só aparece após Gerar Contrato */}
+            {!isRenderingDocx && docxHtml && (
+              <div className="docx-preview mx-auto max-w-[210mm] bg-white rounded shadow-lg border border-border/50 p-12">
+                <div
+                  className="prose prose-sm max-w-none
+                    [&_h1]:font-display [&_h1]:text-center [&_h1]:font-bold [&_h1]:uppercase [&_h1]:tracking-wide
+                    [&_h2]:font-display [&_h2]:font-bold
+                    [&_table]:w-full [&_table]:border-collapse [&_table]:my-4
+                    [&_table_td]:border [&_table_td]:border-gray-300 [&_table_td]:p-2 [&_table_td]:align-top
+                    [&_table_th]:border [&_table_th]:border-gray-300 [&_table_th]:p-2 [&_table_th]:bg-gray-100 [&_table_th]:text-left
+                    [&_img]:max-w-full [&_img]:h-auto
+                    [&_p]:my-2 [&_p]:leading-relaxed [&_p]:text-[12px] [&_p]:text-gray-800
+                    [&_strong]:font-semibold
+                    [&_a]:text-blue-600 [&_a]:underline"
+                  dangerouslySetInnerHTML={{ __html: docxHtml }}
+                />
+                <div className="mt-6 pt-4 border-t border-gray-200 text-center text-xs text-muted-foreground italic">
+                  ⓘ Esta é uma renderização aproximada (HTML). Para fidelidade total ao design O2 INC (logo, marca d'água, fontes), baixe o DOCX usando o botão à direita.
+                </div>
+              </div>
+            )}
+
+            {/* Fallback: preview markdown simples quando não há docxTemplate ou ainda não gerou */}
+            {!isRenderingDocx && !docxHtml && (
+              <div className="prose prose-sm max-w-none">
+                <h1 className="text-center font-display text-xl font-bold uppercase tracking-wide">
+                  Contrato de Prestação de Serviços
+                </h1>
+
+                <p className="mt-6 text-justify leading-relaxed">
+                  Pelo presente instrumento particular, de um lado{" "}
+                  <span className="rounded bg-highlight px-1 font-semibold">
+                    {clientName}
+                  </span>
+                  , inscrito no CNPJ/CPF sob o nº{" "}
+                  <span className="rounded bg-highlight px-1 font-mono">
+                    {clientDoc}
+                  </span>
+                  , doravante denominado CONTRATANTE.
+                </p>
+
+                <h2 className="mt-8 font-display text-lg font-semibold">
+                  Dados Preenchidos
+                </h2>
+                <div className="my-4 rounded-lg border border-border overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted">
+                      <tr>
+                        <th className="px-4 py-2 text-left font-medium">Campo</th>
+                        <th className="px-4 py-2 text-left font-medium">Valor</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {Object.entries(contractData.clientData)
+                        .filter(([, value]) => value.length > 0)
+                        .map(([key, value], i) => (
+                          <tr key={key} className={i % 2 === 1 ? "bg-muted/30" : ""}>
+                            <td className="px-4 py-2 font-medium">{key}</td>
+                            <td className="px-4 py-2">{value}</td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {hasDocxTemplate && (
+                  <div className="mt-6 rounded-lg border border-primary/30 bg-primary/5 p-4">
+                    <p className="text-sm flex items-start gap-2 text-foreground">
+                      <Eye className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                      <span>Clique em <strong>Gerar Contrato</strong> ao lado para ver o preview com o design O2 INC e baixar o DOCX final.</span>
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -368,6 +456,9 @@ _______________________________
                     setIsGenerated(false);
                     setGeneratedContent(null);
                     setDownloadUrl(null);
+                    setDocxHtml(null);
+                    setDocxBytes(null);
+                    setDocxFileName(null);
                   }}
                   variant="outline"
                   className="w-full"

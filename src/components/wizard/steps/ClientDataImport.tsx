@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Upload, FileText, User, X, AlertCircle, RefreshCw, Building2, UserCircle, Phone, CreditCard, FileSignature, PenLine, Info, Eraser } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -49,6 +49,46 @@ function extractTemplateVariables(templateContent: string | undefined): string[]
   return Array.from(keys);
 }
 
+// Valores padrão por template — preenche automaticamente campos comuns.
+// O usuário pode sempre sobrescrever. Só aplica em campos vazios.
+const MESES_PT = [
+  "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+  "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
+];
+
+function getServicoDefault(templateId: string): string {
+  const id = templateId.toLowerCase();
+  if (id.includes("especialista")) return "Setup, licença de uso das plataformas Oxy e Gênio e atuação de Especialista O2 Inc.";
+  if (id.includes("diagnostico")) return "Diagnóstico Estratégico";
+  if (id.includes("cfo")) return "Setup e Assessoria de Gestão Financeira Recorrente, no modelo CFO AS A SERVICE";
+  if (id.includes("saas-oxy-genio-modelo1") || id.includes("oxy-genio")) return "Setup e licença de uso das plataformas Oxy e Gênio";
+  return "";
+}
+
+function getTemplateDefaults(template: Template | null): ClientData {
+  if (!template) return {};
+  const now = new Date();
+  const dia = String(now.getDate()).padStart(2, "0");
+  const mes = MESES_PT[now.getMonth()];
+  const ano = String(now.getFullYear()).slice(-2);
+  const dataCompleta = `${dia}/${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`;
+
+  return {
+    // Data e assinatura
+    dia,
+    mes,
+    ano,
+    data_setup: dataCompleta,
+    // Vigência padrão
+    inicio_vigencia: "A partir da assinatura do presente instrumento.",
+    prazo_vigencia: "12 (doze) meses",
+    dias_rescisao: "30 (trinta)",
+    dias_primeiro_pagamento: "30 (trinta)",
+    // Descrição do serviço por template
+    servico: getServicoDefault(template.id),
+  };
+}
+
 interface ExtractedField {
   value: string;
   confidence: "high" | "medium" | "low";
@@ -78,6 +118,27 @@ export function ClientDataImport({ clientData, onChange, selectedTemplate }: Cli
   const [extractedFields, setExtractedFields] = useState<ExtractedFields | null>(null);
   const [extractionError, setExtractionError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+
+  // Aplica defaults só uma vez por template (evita sobrescrever quando o usuário já alterou)
+  const defaultsAppliedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!selectedTemplate?.id) return;
+    if (defaultsAppliedFor.current === selectedTemplate.id) return;
+
+    const defaults = getTemplateDefaults(selectedTemplate);
+    const newData: ClientData = { ...clientData };
+    let hasChanges = false;
+    for (const [key, defaultValue] of Object.entries(defaults)) {
+      if (!defaultValue) continue;
+      if (!newData[key] || newData[key].trim().length === 0) {
+        newData[key] = defaultValue;
+        hasChanges = true;
+      }
+    }
+    defaultsAppliedFor.current = selectedTemplate.id;
+    if (hasChanges) onChange(newData);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTemplate?.id]);
 
   // Derive dynamic fields from the selected template
   const dynamicFields = useMemo(() => {
