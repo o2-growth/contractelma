@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.render-contract-docx]
 verify_jwt = false
+
+[functions.pipefy-card-moved]
+verify_jwt = false
