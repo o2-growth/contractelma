@@ -1,85 +1,27 @@
-# Sistema de Auditoria e Histórico de Edições
+## Situação atual
 
-## Objetivo
-Registrar todas as alterações feitas em **contratos** e **templates** (criação, edição, exclusão), permitindo:
-- Visualizar quem alterou o quê e quando
-- Ver o estado anterior de cada campo
-- **Reverter** uma alteração específica (restaurar versão anterior)
+A edge function `render-contract-docx` **já existe** no código (`supabase/functions/render-contract-docx/index.ts`), mas:
+- Não está declarada no `supabase/config.toml` com `verify_jwt = false` (por isso pode estar exigindo JWT no invoke)
+- Pode não ter sido deployada ainda
 
-## Sobre o GitHub
-O GitHub conectado já versiona o **código** da plataforma — então alterações de código já têm histórico/rollback nativo (via aba History do Lovable ou git). Esta auditoria foca nos **dados** (contratos e templates editados pelos usuários dentro da plataforma), que o GitHub não cobre.
+## Plano
 
----
+1. **Adicionar bloco no `supabase/config.toml`:**
+   ```toml
+   [functions.render-contract-docx]
+   verify_jwt = false
+   ```
+   Isso alinha ao padrão das outras functions (`generate-contract`, `analyze-template`, etc.) e permite invocar sem token.
 
-## Parte 1: Banco de Dados
+2. **Fazer deploy da function** `render-contract-docx` para garantir que está publicada e atualizada com o código atual (download do template do bucket `documents`, substituição de placeholders `{{...}}` em snake_case/UPPER/lower, retorno em base64).
 
-Criar tabela `audit_logs`:
+3. **Testar via curl** com o payload exato que você forneceu (`templates/base/saas-oxy-genio-modelo1.docx` + `clientData`), validar:
+   - HTTP 200 + `success: true`
+   - `fileName`, `mimeType` e `base64` presentes
+   - Conferir logs caso retorne erro (ex.: arquivo não existe no Storage no path indicado)
 
-| Coluna | Tipo | Descrição |
-|---|---|---|
-| `id` | uuid PK | |
-| `user_id` | uuid | quem fez a alteração |
-| `entity_type` | text | `contract` ou `template` |
-| `entity_id` | uuid | id do registro alterado |
-| `action` | text | `create`, `update`, `delete` |
-| `changed_fields` | jsonb | array de campos alterados (ex: `["status","client_data"]`) |
-| `old_values` | jsonb | snapshot dos valores antigos (apenas dos campos alterados) |
-| `new_values` | jsonb | snapshot dos novos valores |
-| `entity_snapshot` | jsonb | snapshot completo do registro (para restaurar) |
-| `created_at` | timestamptz | |
+4. **Reportar o resultado** com `sizeBytes` e qualquer ajuste necessário (ex.: caminho do template no bucket).
 
-**RLS**: usuário só lê logs das próprias entidades. Inserção feita por triggers (bypass de RLS).
+## Observação
 
-**Triggers automáticos** em `contracts` e `templates`:
-- `AFTER INSERT` → registra `create` com `entity_snapshot`
-- `AFTER UPDATE` → calcula campos alterados, registra `update` com `old_values`/`new_values`/`entity_snapshot` (do estado anterior)
-- `AFTER DELETE` → registra `delete` com snapshot completo
-
-Trigger usa `auth.uid()` para capturar o usuário automaticamente.
-
----
-
-## Parte 2: Interface
-
-### 2.1 Nova página `/auditoria` (Histórico de Alterações)
-- Lista cronológica de todos os logs do usuário
-- Filtros: tipo (contrato/template), ação (criar/editar/excluir), período
-- Cada item mostra: ícone da ação, nome da entidade, campos alterados, data/hora
-- Ao clicar → abre painel lateral com **diff** (antes vs depois) campo a campo
-
-### 2.2 Botão "Restaurar esta versão"
-- Disponível em logs de `update` e `delete`
-- Confirmação antes de aplicar
-- Restaura usando `entity_snapshot` (cria um novo log de `update` com a restauração)
-- Para `delete`: re-cria o registro com mesmo id
-
-### 2.3 Aba "Histórico" dentro do contrato/template
-- Ao abrir um contrato existente, nova aba mostra apenas os logs daquela entidade
-- Mesma funcionalidade de diff e restauração
-
-### 2.4 Sidebar
-- Adicionar item "Auditoria" no menu lateral (`Sidebar.tsx`)
-
----
-
-## Arquivos a criar/editar
-
-| Arquivo | Mudança |
-|---|---|
-| Migração SQL | nova tabela `audit_logs` + triggers |
-| `src/pages/AuditLog.tsx` | nova página de auditoria |
-| `src/components/audit/AuditDiffPanel.tsx` | painel de diff lateral |
-| `src/components/audit/AuditList.tsx` | lista de eventos reutilizável |
-| `src/components/audit/RestoreButton.tsx` | botão + confirmação de restauração |
-| `src/components/layout/Sidebar.tsx` | item "Auditoria" |
-| `src/App.tsx` | rota `/auditoria` |
-| `src/integrations/supabase/types.ts` | regenera automaticamente |
-
----
-
-## Notas técnicas
-- Os triggers rodam com `SECURITY DEFINER` para conseguir inserir em `audit_logs` ignorando RLS
-- `auth.uid()` dentro do trigger captura o usuário autenticado da sessão atual
-- `entity_snapshot` guarda o registro **antes** da alteração, então restaurar = aplicar esse snapshot de volta
-- Restauração feita via `UPDATE` normal do client (que por sua vez gera novo log) — mantém a trilha íntegra
-- Não precisa de Edge Function: tudo via triggers + queries diretas com RLS
+Não há necessidade de criar arquivos novos — só adicionar a configuração do `verify_jwt`, deployar e testar.
