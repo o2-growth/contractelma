@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Download, FileText, Loader2, AlertCircle, AlertTriangle } from "lucide-react";
+import { Download, FileText, Loader2, AlertCircle, AlertTriangle, FileType } from "lucide-react";
 import { SendToSignature } from "./SendToSignature";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import type { ContractData } from "../ContractWizard";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ContractPreviewProps {
   contractData: ContractData;
@@ -22,10 +23,13 @@ function extractTemplateVars(content: string | undefined): string[] {
 
 export function ContractPreview({ contractData }: ContractPreviewProps) {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isDownloadingDocx, setIsDownloadingDocx] = useState(false);
   const [isGenerated, setIsGenerated] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<string | null>(null);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const hasDocxTemplate = Boolean(contractData.template?.docxTemplate);
 
   // Calculate missing fields
   const missingFields = useMemo(() => {
@@ -109,19 +113,77 @@ _______________________________
     }
   };
 
-  const handleDownload = () => {
-    if (!downloadUrl || !generatedContent) return;
+  const getClientLabel = () =>
+    (contractData.clientData.RAZAO_SOCIAL ||
+      contractData.clientData.razao_social ||
+      contractData.clientData.CLIENTE ||
+      contractData.clientData.nome ||
+      "cliente")
+      .replace(/\s+/g, "_")
+      .slice(0, 80);
 
+  const handleDownloadMd = () => {
+    if (!generatedContent) return;
     const blob = new Blob([generatedContent], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `contrato_${(contractData.clientData.RAZAO_SOCIAL || contractData.clientData.CLIENTE || contractData.clientData.nome || "cliente").replace(/\s+/g, "_")}_${Date.now()}.md`;
+    link.download = `contrato_${getClientLabel()}_${Date.now()}.md`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    toast.success("Download iniciado!");
+    toast.success("Markdown baixado");
+  };
+
+  const handleDownloadDocx = async () => {
+    const docxTemplate = contractData.template?.docxTemplate;
+    if (!docxTemplate) {
+      toast.error("Este template não tem DOCX oficial — use o markdown");
+      return;
+    }
+
+    setIsDownloadingDocx(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke(
+        "render-contract-docx",
+        {
+          body: {
+            docxTemplate,
+            clientData: contractData.clientData,
+            contractName: `contrato_${getClientLabel()}`,
+          },
+        }
+      );
+
+      if (fnError) throw new Error(fnError.message || "Falha na edge function");
+      if (!data?.success) throw new Error(data?.error || "Falha ao renderizar DOCX");
+      if (!data.base64) throw new Error("DOCX vazio retornado pela edge function");
+
+      // Decode base64 → Blob → download
+      const binaryStr = atob(data.base64);
+      const bytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) {
+        bytes[i] = binaryStr.charCodeAt(i);
+      }
+      const blob = new Blob([bytes], { type: data.mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = data.fileName || `contrato_${getClientLabel()}_${Date.now()}.docx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success("DOCX baixado com design preservado!");
+    } catch (err) {
+      console.error("Erro ao baixar DOCX:", err);
+      const msg = err instanceof Error ? err.message : "Erro desconhecido";
+      toast.error("Erro ao baixar DOCX", { description: msg });
+    } finally {
+      setIsDownloadingDocx(false);
+    }
   };
 
   const clientName = contractData.clientData.RAZAO_SOCIAL || contractData.clientData.CLIENTE || contractData.clientData.nome || "[NOME DO CLIENTE]";
@@ -276,12 +338,30 @@ _______________________________
               </Button>
             ) : (
               <>
+                {hasDocxTemplate && (
+                  <Button
+                    onClick={handleDownloadDocx}
+                    disabled={isDownloadingDocx}
+                    className={cn("w-full gap-2", "bg-success hover:bg-success/90")}
+                  >
+                    {isDownloadingDocx ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <FileType className="h-4 w-4" />
+                    )}
+                    {isDownloadingDocx ? "Gerando DOCX..." : "Baixar DOCX (design preservado)"}
+                  </Button>
+                )}
                 <Button
-                  onClick={handleDownload}
-                  className={cn("w-full gap-2", "bg-success hover:bg-success/90")}
+                  onClick={handleDownloadMd}
+                  variant={hasDocxTemplate ? "outline" : "default"}
+                  className={cn(
+                    "w-full gap-2",
+                    !hasDocxTemplate && "bg-success hover:bg-success/90"
+                  )}
                 >
                   <Download className="h-4 w-4" />
-                  Baixar Contrato
+                  {hasDocxTemplate ? "Baixar Markdown (preview)" : "Baixar Contrato"}
                 </Button>
                 <Button
                   onClick={() => {
