@@ -24,6 +24,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<RequireAuth><Dashboard /></RequireAuth>} />
           <Route path="/contract/new" element={<RequireAuth><NewContract /></RequireAuth>} />
+          <Route path="/contract/:id" element={<RequireAuth><NewContract /></RequireAuth>} />
           <Route path="/templates" element={<RequireAuth><Templates /></RequireAuth>} />
           <Route path="/history" element={<RequireAuth><History /></RequireAuth>} />
           <Route path="/auditoria" element={<RequireAuth><AuditLog /></RequireAuth>} />

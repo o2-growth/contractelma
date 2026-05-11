@@ -30,12 +30,25 @@ export interface ContractData {
   clientData: ClientData;
 }
 
-export function ContractWizard() {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [contractData, setContractData] = useState<ContractData>({
-    template: null,
-    clientData: {},
-  });
+interface ContractWizardProps {
+  // Dados iniciais (usado quando edita um contrato existente — pula direto pro passo 2)
+  initialContractData?: ContractData;
+  // ID do contrato no banco (pra modo edição)
+  contractId?: string;
+}
+
+export function ContractWizard({ initialContractData, contractId }: ContractWizardProps = {}) {
+  const isEditing = Boolean(contractId);
+  // Se entrou em modo edição com template já carregado, pula pro passo 2 (Dados)
+  const [currentStep, setCurrentStep] = useState(
+    isEditing && initialContractData?.template ? 2 : 1
+  );
+  const [contractData, setContractData] = useState<ContractData>(
+    initialContractData || {
+      template: null,
+      clientData: {},
+    }
+  );
 
   const handleTemplateSelect = useCallback((template: Template) => {
     setContractData((prev) => ({ ...prev, template, clientData: {} }));

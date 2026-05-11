@@ -153,12 +153,8 @@ export default function History() {
   };
 
   const goToWizardWithContract = (contract: Contract) => {
-    // Navega pro wizard. Como o wizard cria novo do zero, isso é "abrir como rascunho"
-    navigate("/contract/new", {
-      state: {
-        prefilledContract: contract,
-      },
-    });
+    // Navega pra /contract/:id que carrega o contrato e abre o wizard em modo edição
+    navigate(`/contract/${contract.id}`);
   };
 
   const getClientName = (clientData: unknown) => {
