@@ -85,6 +85,37 @@ function pickTemplateName(produtos: string[], allFields: PipefyField[]): string 
   return TEMPLATE_NAMES.M1;
 }
 
+function parseCurrencyToNumber(s: string): number {
+  if (!s) return 0;
+  // Aceita "R$ 1.234,56", "1234.56", "1234,56", "1234"
+  const cleaned = s.replace(/[^\d,.-]/g, "");
+  // Se tem vírgula como decimal (formato BR), troca por ponto
+  const hasComma = cleaned.includes(",");
+  const normalized = hasComma
+    ? cleaned.replace(/\./g, "").replace(",", ".")
+    : cleaned;
+  const n = parseFloat(normalized);
+  return isFinite(n) ? n : 0;
+}
+
+function computeTotalValue(card: PipefyCard): number {
+  const F = card.fields;
+  const get = (id: string) => findField(F, id);
+
+  const valorSetup = parseCurrencyToNumber(get("valor_setup_1"));
+  const valorMrr = parseCurrencyToNumber(get("copy_of_valor_setup_1"));
+  const valorOxy = parseCurrencyToNumber(get("valor"));
+  const valorDiagnostico = parseCurrencyToNumber(get("valor_diagn_stico_estrat_gico"));
+
+  // Duração do contrato em meses (default 12 se vazio)
+  const duracaoRaw = parseCurrencyToNumber(get("dura_o_do_contrato"));
+  const duracaoMeses = duracaoRaw > 0 ? duracaoRaw : 12;
+
+  // Total = Setup + (Mensal × meses) + Oxy + Diagnostico
+  const mensal = valorMrr || valorOxy;
+  return valorSetup + (mensal * duracaoMeses) + valorDiagnostico;
+}
+
 function buildClientDataFromCard(card: PipefyCard): Record<string, string> {
   const F = card.fields;
   const get = (id: string) => findField(F, id);
@@ -97,23 +128,29 @@ function buildClientDataFromCard(card: PipefyCard): Record<string, string> {
   const ano = get("ano") || String(now.getFullYear()).slice(-2);
   const dataSetup = get("data_de_pagamento_setup") || `${dia}/${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`;
 
-  // Valor por extenso é melhor que number formatado
+  // Formata número como "R$ 1.234,56" (formato BR)
+  const fmtBRL = (n: number) =>
+    n > 0
+      ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n)
+      : "";
+
+  // Valor por extenso prioritário; senão usa número formatado
   const valorSetupExtenso = get("valor_por_extenso_setup");
-  const valorSetupNum = get("valor_setup_1");
-  const valorExtensoSetup = valorSetupExtenso || (valorSetupNum ? `R$ ${valorSetupNum}` : "");
+  const valorSetupN = parseCurrencyToNumber(get("valor_setup_1"));
+  const valorExtensoSetup = valorSetupExtenso || fmtBRL(valorSetupN);
 
   const qtdParcelas = get("copy_of_valor_por_extenso_setup");
   const valorParcelasExtenso = get("valor_das_parcelas_por_extenso");
-  const valorParcelasNum = get("valor_das_parcelas");
+  const valorParcelasN = parseCurrencyToNumber(get("valor_das_parcelas"));
   const parcelasExtenso = (qtdParcelas && valorParcelasExtenso)
     ? `${qtdParcelas} parcelas de ${valorParcelasExtenso}`
-    : (qtdParcelas && valorParcelasNum)
-      ? `${qtdParcelas} parcelas de R$ ${valorParcelasNum}`
-      : (valorParcelasExtenso || "");
+    : (qtdParcelas && valorParcelasN > 0)
+      ? `${qtdParcelas} parcelas de ${fmtBRL(valorParcelasN)}`
+      : (valorParcelasExtenso || fmtBRL(valorParcelasN) || "");
 
   const valorMrrExtenso = get("valor_mrr_por_extenso");
-  const valorMrrNum = get("copy_of_valor_setup_1");
-  const valorPlataforma = valorMrrExtenso || (valorMrrNum ? `R$ ${valorMrrNum}` : "");
+  const valorMrrN = parseCurrencyToNumber(get("copy_of_valor_setup_1"));
+  const valorPlataforma = valorMrrExtenso || (valorMrrN > 0 ? `${fmtBRL(valorMrrN)} mensais` : "");
 
   // Período de rescisão: "30 dias", "60 dias", "90 dias" → "30 (trinta)" etc
   const rescisaoLabel = get("data_de_aviso_pr_vio_para_rescis_o_contratual");
@@ -263,6 +300,7 @@ serve(async (req) => {
 
     // 4. Mapear campos do card → placeholders
     const clientData = buildClientDataFromCard(card);
+    const totalValue = computeTotalValue(card);
 
     // 5. Idempotência — verifica se já existe contrato pra esse card
     const { data: existing } = await supabase
@@ -281,6 +319,7 @@ serve(async (req) => {
         .update({
           template_id: templateRow.id,
           client_data: clientData,
+          total_value: totalValue,
           pipefy_phase_id: TARGET_PHASE_ID,
           pipefy_data: card,
         })
@@ -296,6 +335,7 @@ serve(async (req) => {
           template_id: templateRow.id,
           client_data: clientData,
           products: [],
+          total_value: totalValue,
           status: "draft",
           pipefy_card_id: String(cardId),
           pipefy_phase_id: TARGET_PHASE_ID,
