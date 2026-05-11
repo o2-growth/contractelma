@@ -38,11 +38,18 @@ interface PipefyField {
   field: { id: string; label?: string; type?: string };
 }
 
+interface PipefyAttachment {
+  url: string;
+  path?: string;
+  field: { id: string; label?: string };
+}
+
 interface PipefyCard {
   id: string;
   title?: string;
   current_phase?: { id: string; name?: string };
   fields: PipefyField[];
+  attachments?: PipefyAttachment[];
 }
 
 function findField(fields: PipefyField[], fieldId: string): string {
@@ -83,6 +90,146 @@ function pickTemplateName(produtos: string[], allFields: PipefyField[]): string 
   if (has("oxy") || has("gênio") || has("genio") || has("saas")) return TEMPLATE_NAMES.M1;
   // Fallback: M1 (mais comum)
   return TEMPLATE_NAMES.M1;
+}
+
+// ============================================================================
+// Extração de CPF (CNH) e endereço (Contrato Social) via Gemini multimodal
+// ============================================================================
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+    binary += String.fromCharCode.apply(null, Array.from(chunk));
+  }
+  return btoa(binary);
+}
+
+async function downloadAsBase64(url: string): Promise<{ base64: string; mimeType: string } | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.error(`Falha ao baixar ${url}: HTTP ${res.status}`);
+      return null;
+    }
+    const arrayBuf = await res.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuf);
+    const mimeType = res.headers.get("content-type")?.split(";")[0]?.trim() || "application/pdf";
+    return { base64: bytesToBase64(bytes), mimeType };
+  } catch (e) {
+    console.error("downloadAsBase64 error:", e);
+    return null;
+  }
+}
+
+/**
+ * Usa o Lovable AI Gateway (Gemini 2.5 Flash, multimodal) para extrair
+ * dados estruturados de um documento (PDF/imagem) anexado no Pipefy.
+ *
+ * @param prompt Instrução do que extrair (em PT-BR)
+ * @param fileBase64 Documento em base64
+ * @param mimeType Mime type (application/pdf, image/jpeg, etc)
+ * @returns String JSON com os dados extraídos, ou null em erro
+ */
+async function extractDataFromFile(
+  prompt: string,
+  fileBase64: string,
+  mimeType: string
+): Promise<string | null> {
+  const apiKey = Deno.env.get("LOVABLE_API_KEY");
+  if (!apiKey) {
+    console.warn("LOVABLE_API_KEY ausente — pulando extração via IA");
+    return null;
+  }
+
+  try {
+    const dataUri = `data:${mimeType};base64,${fileBase64}`;
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: prompt },
+              { type: "image_url", image_url: { url: dataUri } },
+            ],
+          },
+        ],
+        temperature: 0.1,
+      }),
+    });
+
+    if (!response.ok) {
+      const errTxt = await response.text();
+      console.error(`Gemini ${response.status}:`, errTxt.slice(0, 300));
+      return null;
+    }
+
+    const json = await response.json();
+    return json?.choices?.[0]?.message?.content || null;
+  } catch (e) {
+    console.error("extractDataFromFile error:", e);
+    return null;
+  }
+}
+
+async function extractCpfFromCnh(url: string): Promise<string | null> {
+  console.log("Baixando CNH:", url.slice(0, 100));
+  const file = await downloadAsBase64(url);
+  if (!file) return null;
+
+  const prompt = `Você é um extrator de dados de CNH (Carteira Nacional de Habilitação) brasileira.
+Extraia APENAS o CPF do titular da CNH, no formato XXX.XXX.XXX-XX.
+Responda em JSON estrito: {"cpf": "..."}.
+Se não encontrar CPF, responda: {"cpf": ""}.
+NÃO adicione texto fora do JSON.`;
+
+  const content = await extractDataFromFile(prompt, file.base64, file.mimeType);
+  if (!content) return null;
+
+  try {
+    const match = content.match(/\{[\s\S]*\}/);
+    if (!match) return null;
+    const obj = JSON.parse(match[0]);
+    const cpf = (obj?.cpf || "").toString().trim();
+    return cpf || null;
+  } catch (e) {
+    console.error("Erro parseando CPF:", e, "raw:", content.slice(0, 200));
+    return null;
+  }
+}
+
+async function extractEnderecoFromContratoSocial(url: string): Promise<string | null> {
+  console.log("Baixando Contrato Social:", url.slice(0, 100));
+  const file = await downloadAsBase64(url);
+  if (!file) return null;
+
+  const prompt = `Você é um extrator de dados de contratos sociais de empresas brasileiras.
+Extraia APENAS o endereço completo da sede da empresa (rua/avenida, número, complemento, bairro, cidade, estado, CEP).
+Responda em JSON estrito: {"endereco": "..."}.
+Se não encontrar endereço, responda: {"endereco": ""}.
+NÃO adicione texto fora do JSON.`;
+
+  const content = await extractDataFromFile(prompt, file.base64, file.mimeType);
+  if (!content) return null;
+
+  try {
+    const match = content.match(/\{[\s\S]*\}/);
+    if (!match) return null;
+    const obj = JSON.parse(match[0]);
+    const end = (obj?.endereco || "").toString().trim();
+    return end || null;
+  } catch (e) {
+    console.error("Erro parseando endereço:", e, "raw:", content.slice(0, 200));
+    return null;
+  }
 }
 
 function parseCurrencyToNumber(s: string): number {
@@ -214,6 +361,11 @@ async function fetchCard(cardId: string, token: string): Promise<PipefyCard | nu
           array_value
           field { id label type }
         }
+        attachments {
+          url
+          path
+          field { id label }
+        }
       }
     }
   `;
@@ -301,6 +453,36 @@ serve(async (req) => {
     // 4. Mapear campos do card → placeholders
     const clientData = buildClientDataFromCard(card);
     const totalValue = computeTotalValue(card);
+
+    // 4.1 OCR via Gemini: extrair CPF da CNH e endereço do Contrato Social
+    // Só roda se os campos estiverem vazios E houver attachment correspondente.
+    const attachments = card.attachments || [];
+    const cnhAtt = attachments.find((a) => a.field?.id === "cnh_de_quem_assina");
+    const contratoAtt = attachments.find((a) => a.field?.id === "contrato_social_da_empresa");
+
+    if (!clientData.cpf && cnhAtt?.url) {
+      try {
+        const cpf = await extractCpfFromCnh(cnhAtt.url);
+        if (cpf) {
+          console.log(`Card ${cardId}: CPF extraído da CNH via IA: ${cpf}`);
+          clientData.cpf = cpf;
+        }
+      } catch (e) {
+        console.error("Falha extraindo CPF da CNH:", e);
+      }
+    }
+
+    if (!clientData.endereco && contratoAtt?.url) {
+      try {
+        const endereco = await extractEnderecoFromContratoSocial(contratoAtt.url);
+        if (endereco) {
+          console.log(`Card ${cardId}: endereço extraído do Contrato Social via IA`);
+          clientData.endereco = endereco;
+        }
+      } catch (e) {
+        console.error("Falha extraindo endereço do Contrato Social:", e);
+      }
+    }
 
     // 5. Idempotência — verifica se já existe contrato pra esse card
     const { data: existing } = await supabase
