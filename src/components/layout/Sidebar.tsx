@@ -76,14 +76,18 @@ export function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-[260px] border-r border-sidebar-border bg-sidebar">
       <div className="flex h-full flex-col">
-        {/* Logo */}
+        {/* Logo O2 Inc */}
         <div className="flex h-16 items-center gap-3 px-6 border-b border-sidebar-border">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <FileCheck className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <span className="font-display text-xl font-bold text-sidebar-foreground">
-            ContractFlow
-          </span>
+          <img
+            src="/o2/logo-black.png"
+            alt="O2 Inc"
+            className="h-8 w-auto object-contain dark:hidden"
+          />
+          <img
+            src="/o2/logo-white.png"
+            alt="O2 Inc"
+            className="h-8 w-auto object-contain hidden dark:block"
+          />
         </div>
 
         {/* Navigation */}

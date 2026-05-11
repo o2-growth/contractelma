@@ -6,12 +6,33 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ContractFlow Design System - Professional Clarity */
+/* ============================================================================
+   O2 Inc Design System — aplicado sobre o esqueleto Tailwind/shadcn original.
+   - Cor primária trocada de azul → Lima 500 #00D842 (verde-assinatura O2)
+   - Fontes Montserrat (body) + Anton/Barlow Condensed (display fallback)
+   - Tusker Grotesk seria o ideal pra display, mas requer download manual
+     do Drive O2 (público) em /public/fonts/tusker-grotesk/ — usando Anton
+     como fallback enquanto isso (mesma estética condensada uppercase)
+   - Tokens semânticos O2 (--o2-lima, --o2-ink, etc.) ficam disponíveis para
+     componentes específicos da identidade visual
+   ============================================================================ */
 
 @layer base {
   :root {
-    /* Primary - Deep blue that conveys trust */
-    --primary: 217 91% 60%;
+    /* O2 Brand tokens — paleta oficial */
+    --o2-lima-400: 120 84% 66%;   /* #63F161 - dark bg only */
+    --o2-lima-500: 134 100% 42%;  /* #00D842 - light bg only (PRIMARY) */
+    --o2-lima-600: 132 100% 35%;  /* #00B038 - hover/depth */
+    --o2-ink-900: 0 0% 13%;       /* #212121 */
+    --o2-ink-700: 0 0% 29%;       /* #494949 */
+    --o2-ink-500: 0 0% 40%;       /* #676767 */
+    --o2-ink-300: 0 0% 67%;       /* #AAAAAA */
+    --o2-ink-200: 0 0% 75%;       /* #BFBFBF */
+    --o2-ink-150: 0 0% 92%;       /* #EAEAEA */
+    --o2-off-white: 60 8% 98%;    /* #FBFBFA */
+
+    /* Primary - Lima 500 (verde-assinatura O2) */
+    --primary: 134 100% 42%;
     --primary-foreground: 0 0% 100%;
     
     /* Background - Clean and spacious */
@@ -60,19 +81,19 @@
     /* Border and input */
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 217 91% 60%;
+    --ring: 134 100% 42%; /* Lima 500 */
 
     --radius: 0.75rem;
 
-    /* Sidebar */
+    /* Sidebar — assinatura O2: fundo branco, accent Lima */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-foreground: 0 0% 13%; /* Ink 900 */
+    --sidebar-primary: 134 100% 42%; /* Lima 500 */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 96%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-accent: 134 100% 95%; /* Lima muito clarinho */
+    --sidebar-accent-foreground: 134 100% 28%; /* Lima escuro pra contraste */
+    --sidebar-border: 0 0% 92%; /* Ink 150 */
+    --sidebar-ring: 134 100% 42%;
     
     /* Gray scale for fine-tuned control */
     --gray-50: 210 40% 98%;
@@ -92,10 +113,15 @@
     --shadow-lg: 0 8px 24px -4px rgba(0, 0, 0, 0.12);
     --shadow-xl: 0 16px 48px -8px rgba(0, 0, 0, 0.16);
     
-    /* Typography */
-    --font-display: "Plus Jakarta Sans Variable", -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-body: "Inter Variable", -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-mono: "JetBrains Mono Variable", "Fira Code", monospace;
+    /* Typography — O2 Design System
+       NOTA: Tusker Grotesk é a oficial pra display. Como requer download manual
+       do Drive O2, usamos Anton + Barlow Condensed como fallback (mesma estética
+       condensada uppercase). Pra ativar Tusker, baixe os .woff2 de
+       https://drive.google.com/drive/folders/17lPQpGGy9ul1R6fnOGKa3K3yM3AuOpIm
+       e coloque em public/fonts/tusker-grotesk/ */
+    --font-display: "Anton", "Barlow Condensed", "Plus Jakarta Sans Variable", "Impact", sans-serif;
+    --font-body: "Montserrat", "Inter Variable", system-ui, -apple-system, sans-serif;
+    --font-mono: "JetBrains Mono", "JetBrains Mono Variable", "Fira Code", monospace;
     
     /* Animation durations */
     --duration-fast: 150ms;

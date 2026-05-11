@@ -54,11 +54,17 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <div className="mb-6 flex flex-col items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-            <FileCheck className="h-6 w-6 text-primary-foreground" />
-          </div>
-          <h1 className="font-display text-2xl font-bold text-foreground">ContractFlow</h1>
-          <p className="text-sm text-muted-foreground">Acesse sua conta para continuar</p>
+          <img
+            src="/o2/logo-black.png"
+            alt="O2 Inc"
+            className="h-12 w-auto object-contain dark:hidden"
+          />
+          <img
+            src="/o2/logo-white.png"
+            alt="O2 Inc"
+            className="h-12 w-auto object-contain hidden dark:block"
+          />
+          <p className="text-sm text-muted-foreground mt-2">Acesse sua conta para continuar</p>
         </div>
 
         <Tabs defaultValue="login" className="rounded-xl border border-border bg-card p-6 shadow-card">
