@@ -261,7 +261,7 @@ São Paulo/SP, {{dia}} de {{mes}} de 20{{ano}}.
 | CNPJ nº 23.813.779/0001-60 | CNPJ nº {{cnpj}} |
 | [assinado digitalmente] | [assinado digitalmente] |
 `,
-  },,
+  },
   {
     id: "saas-oxy-genio-especialista-modelo2",
     name: "SaaS Oxy + Gênio + Especialista (Modelo 2 - Oficial)",
@@ -328,7 +328,7 @@ São Paulo/SP, {{dia}} de {{mes}} de 20{{ano}}.
 | CNPJ nº 23.813.779/0001-60 | CNPJ nº {{cnpj}} |
 | [assinado digitalmente] | [assinado digitalmente] |
 `,
-  },,
+  },
   {
     id: "diagnostico-estrategico-modelo3",
     name: "Diagnóstico Estratégico (Modelo 3 - Oficial)",
@@ -389,7 +389,7 @@ São Paulo/SP, {{dia}} de {{mes}} de 20{{ano}}.
 | CNPJ nº 23.813.779/0001-60 | CNPJ nº {{cnpj}} |
 | [assinado digitalmente] | [assinado digitalmente] |
 `,
-  },,
+  },
   {
     id: "cfo-as-a-service-modelo4",
     name: "CFO as a Service (Modelo 4 - Oficial, revisado março)",
@@ -456,7 +456,7 @@ São Paulo/SP, {{dia}} de {{mes}} de 20{{ano}}.
 | CNPJ nº 23.813.779/0001-60 | CNPJ nº {{cnpj}} |
 | [assinado digitalmente] | [assinado digitalmente] |
 `,
-  },,
+  },
 ];
 
 // Available placeholders for templates
