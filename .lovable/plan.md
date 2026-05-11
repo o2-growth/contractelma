@@ -1,22 +1,25 @@
-## Ativação da integração Pipefy
+## Problema
 
-Verifiquei: o arquivo de migration e a edge function já estão no repo, mas as colunas `pipefy_*` ainda **não existem** na tabela `contracts` do banco, e o secret `PIPEFY_API_KEY` ainda não está configurado.
+Ao abrir um contrato existente (ex: `/contract/c4f1e778-...`), aparece o erro:
 
-### Passos
+> Cannot read properties of undefined (reading 'name')
 
-1. **Aplicar migration no banco** (cria `pipefy_card_id`, `pipefy_phase_id`, `pipefy_data` + índices em `public.contracts`). Estritamente aditiva, sem risco para dados existentes.
+## Causa raiz
 
-2. **Configurar secret `PIPEFY_API_KEY`** via formulário seguro (você cola o token `eyJhbGci...` quando eu pedir).
+`src/constants/contractTemplates.ts` tem vírgulas duplicadas (`},,`) entre as entradas do array `defaultTemplates` (linhas 264, 331, 392, 459). Isso cria **sparse arrays** (arrays com "holes").
 
-3. **Deploy da edge function `pipefy-card-moved`** (já registrada em `supabase/config.toml` com `verify_jwt = false`).
+Em `src/pages/NewContract.tsx` linha 48:
 
-4. **Verificação** via logs da function — peço pra você mover um card no Pipefy pra fase "Contrato em elaboração" e confirmo:
-   - webhook respondeu 200
-   - novo registro em `contracts` com `pipefy_card_id` preenchido e `status = 'draft'`
-   - aparece em `/history`
+```ts
+const matchDefault = defaultTemplates.find((d) => d.name === tpl.name);
+```
 
-### Observações
+`Array.prototype.find` **não pula holes** (diferente de `map`/`forEach`/`filter`). Ele visita o hole como `undefined`, e o acesso a `d.name` lança o TypeError, que é capturado pelo bloco `catch` e exibido na tela com os botões "Criar novo do zero" e "Voltar ao Histórico".
 
-- Não vou recriar o webhook no Pipefy (id 300671623 já existe).
-- Não vou alterar o código da function — só deploy.
-- Ordem importa: secret antes do deploy, pra function já subir com a env var disponível.
+## Correção
+
+Trocar as 4 ocorrências de `},,` por `},` em `src/constants/contractTemplates.ts` (linhas 264, 331, 392, 459).
+
+## Verificação
+
+Recarregar a rota `/contract/c4f1e778-f434-4b3d-bc6e-a2484c985242` e confirmar que o wizard abre direto no passo 2 (Dados) com o template "CFO as a Service (Modelo 4)" carregado, sem o erro.
