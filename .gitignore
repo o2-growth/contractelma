@@ -17,8 +17,18 @@ dist-ssr
 !.vscode/extensions.json
 .idea
 .DS_Store
+**/.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# Templates auxiliares (mantém apenas DOCX oficiais)
+templates_base/TESTE_*.docx
+templates_base/*.md
+templates_base/PARA_UPLOAD_NO_SUPABASE/
+
+# Supabase
+supabase/.temp/
+supabase/.branches/
