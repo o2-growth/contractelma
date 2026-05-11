@@ -121,7 +121,7 @@ export default function Dashboard() {
               Dashboard
             </h1>
             <p className="mt-1 text-muted-foreground">
-              {isLoggedIn ? "Bem-vindo ao ContractFlow" : "Faça login para ver seus dados"}
+              {isLoggedIn ? "Bem-vindo ao Contract Elma" : "Faça login para ver seus dados"}
             </p>
           </div>
           <Button asChild className="gap-2">
