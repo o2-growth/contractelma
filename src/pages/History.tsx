@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { FileText, Search, Download, Eye, Filter, Loader2 } from "lucide-react";
+import { FileText, Search, Download, Eye, Filter, Loader2, FileType, ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -12,7 +13,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -23,11 +33,13 @@ interface Contract {
   created_at: string;
   template_id: string | null;
   total_value: number | null;
+  pipefy_card_id?: string | null;
 }
 
 interface Template {
   id: string;
   name: string;
+  docxTemplate?: string | null;
 }
 
 const statusConfig: Record<string, { label: string; variant: "default" | "success" | "warning" }> = {
@@ -36,17 +48,28 @@ const statusConfig: Record<string, { label: string; variant: "default" | "succes
   sent: { label: "Enviado", variant: "warning" },
 };
 
+// Mapa dos docxTemplates conhecidos por nome (paths no Storage)
+const DOCX_TEMPLATE_PATHS: Record<string, string> = {
+  "SaaS Oxy + Gênio (Modelo 1 - Oficial)": "templates/base/saas-oxy-genio-modelo1.docx",
+  "SaaS Oxy + Gênio + Especialista (Modelo 2 - Oficial)": "templates/base/saas-oxy-genio-especialista-modelo2.docx",
+  "Diagnóstico Estratégico (Modelo 3 - Oficial)": "templates/base/diagnostico-estrategico-modelo3.docx",
+  "CFO as a Service (Modelo 4 - Oficial, revisado março)": "templates/base/cfo-as-a-service-modelo4.docx",
+};
+
 export default function History() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [viewContract, setViewContract] = useState<Contract | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
-      
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         setIsLoading(false);
@@ -55,7 +78,7 @@ export default function History() {
 
       const { data: contractsData } = await supabase
         .from("contracts")
-        .select("id, client_data, status, created_at, template_id, total_value")
+        .select("id, client_data, status, created_at, template_id, total_value, pipefy_card_id")
         .order("created_at", { ascending: false });
 
       const { data: templatesData } = await supabase
@@ -69,6 +92,74 @@ export default function History() {
 
     fetchData();
   }, []);
+
+  const handleView = (contract: Contract) => {
+    setViewContract(contract);
+  };
+
+  const handleDownload = async (contract: Contract) => {
+    const templateName = getTemplateName(contract.template_id);
+    const docxPath = DOCX_TEMPLATE_PATHS[templateName];
+    if (!docxPath) {
+      toast.error("Template oficial não identificado", {
+        description: "Este contrato não tem um DOCX oficial vinculado.",
+      });
+      return;
+    }
+
+    setDownloadingId(contract.id);
+    try {
+      const clientData = (contract.client_data as Record<string, string>) || {};
+      const labelBase = clientData.razao_social || clientData.RAZAO_SOCIAL || clientData.nome || clientData.cliente || "contrato";
+      const cleanLabel = labelBase.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 60);
+
+      const { data, error: fnError } = await supabase.functions.invoke(
+        "render-contract-docx",
+        {
+          body: {
+            docxTemplate: docxPath,
+            clientData,
+            contractName: `contrato_${cleanLabel}`,
+          },
+        }
+      );
+
+      if (fnError) throw new Error(fnError.message || "Falha na edge function");
+      if (!data?.success) throw new Error(data?.error || "Falha ao renderizar DOCX");
+      if (!data.base64) throw new Error("DOCX vazio retornado");
+
+      const binary = atob(data.base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const blob = new Blob([bytes], { type: data.mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = data.fileName || `contrato_${cleanLabel}_${Date.now()}.docx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success("DOCX baixado com design preservado!");
+    } catch (err) {
+      console.error("Erro ao baixar DOCX:", err);
+      toast.error("Erro ao baixar DOCX", {
+        description: err instanceof Error ? err.message : "tente novamente",
+      });
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const goToWizardWithContract = (contract: Contract) => {
+    // Navega pro wizard. Como o wizard cria novo do zero, isso é "abrir como rascunho"
+    navigate("/contract/new", {
+      state: {
+        prefilledContract: contract,
+      },
+    });
+  };
 
   const getClientName = (clientData: unknown) => {
     const data = clientData as { nome?: string };
@@ -215,11 +306,26 @@ export default function History() {
                         </StatusBadge>
                       </div>
                       <div className="col-span-1 flex justify-end gap-1">
-                        <Button variant="ghost" size="sm">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleView(contract)}
+                          title="Visualizar detalhes"
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
-                          <Download className="h-4 w-4" />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDownload(contract)}
+                          disabled={downloadingId === contract.id}
+                          title="Baixar DOCX"
+                        >
+                          {downloadingId === contract.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Download className="h-4 w-4" />
+                          )}
                         </Button>
                       </div>
                     </motion.div>
@@ -235,6 +341,91 @@ export default function History() {
             </>
           )}
         </motion.div>
+
+        {/* Modal de visualização de detalhes */}
+        <Dialog open={!!viewContract} onOpenChange={(open) => !open && setViewContract(null)}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                {viewContract && getClientName(viewContract.client_data)}
+              </DialogTitle>
+              <DialogDescription>
+                {viewContract && getTemplateName(viewContract.template_id)}
+                {viewContract?.pipefy_card_id && (
+                  <span className="ml-2 inline-flex items-center gap-1 rounded bg-primary/10 text-primary text-xs px-2 py-0.5 font-medium">
+                    Origem: Pipefy #{viewContract.pipefy_card_id}
+                  </span>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+
+            {viewContract && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground">Status</p>
+                    <p className="font-medium">{statusConfig[viewContract.status as keyof typeof statusConfig]?.label || viewContract.status}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground">Criado em</p>
+                    <p className="font-medium">{formatDate(viewContract.created_at)}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-display font-semibold text-sm mb-2">Dados Preenchidos</h4>
+                  <div className="rounded-lg border border-border overflow-hidden">
+                    <table className="w-full text-sm">
+                      <tbody className="divide-y divide-border">
+                        {Object.entries((viewContract.client_data as Record<string, string>) || {})
+                          .filter(([, v]) => v && String(v).trim().length > 0)
+                          .map(([k, v], i) => (
+                            <tr key={k} className={i % 2 === 1 ? "bg-muted/30" : ""}>
+                              <td className="px-3 py-2 font-medium text-muted-foreground w-1/3">{k}</td>
+                              <td className="px-3 py-2 break-words">{String(v)}</td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter className="gap-2">
+              {viewContract && (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      goToWizardWithContract(viewContract);
+                      setViewContract(null);
+                    }}
+                    className="gap-2"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Abrir no Wizard
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      handleDownload(viewContract);
+                    }}
+                    disabled={downloadingId === viewContract.id}
+                    className="gap-2"
+                  >
+                    {downloadingId === viewContract.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <FileType className="h-4 w-4" />
+                    )}
+                    Baixar DOCX
+                  </Button>
+                </>
+              )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
