@@ -1,27 +1,22 @@
-## Situação atual
+## Ativação da integração Pipefy
 
-A edge function `render-contract-docx` **já existe** no código (`supabase/functions/render-contract-docx/index.ts`), mas:
-- Não está declarada no `supabase/config.toml` com `verify_jwt = false` (por isso pode estar exigindo JWT no invoke)
-- Pode não ter sido deployada ainda
+Verifiquei: o arquivo de migration e a edge function já estão no repo, mas as colunas `pipefy_*` ainda **não existem** na tabela `contracts` do banco, e o secret `PIPEFY_API_KEY` ainda não está configurado.
 
-## Plano
+### Passos
 
-1. **Adicionar bloco no `supabase/config.toml`:**
-   ```toml
-   [functions.render-contract-docx]
-   verify_jwt = false
-   ```
-   Isso alinha ao padrão das outras functions (`generate-contract`, `analyze-template`, etc.) e permite invocar sem token.
+1. **Aplicar migration no banco** (cria `pipefy_card_id`, `pipefy_phase_id`, `pipefy_data` + índices em `public.contracts`). Estritamente aditiva, sem risco para dados existentes.
 
-2. **Fazer deploy da function** `render-contract-docx` para garantir que está publicada e atualizada com o código atual (download do template do bucket `documents`, substituição de placeholders `{{...}}` em snake_case/UPPER/lower, retorno em base64).
+2. **Configurar secret `PIPEFY_API_KEY`** via formulário seguro (você cola o token `eyJhbGci...` quando eu pedir).
 
-3. **Testar via curl** com o payload exato que você forneceu (`templates/base/saas-oxy-genio-modelo1.docx` + `clientData`), validar:
-   - HTTP 200 + `success: true`
-   - `fileName`, `mimeType` e `base64` presentes
-   - Conferir logs caso retorne erro (ex.: arquivo não existe no Storage no path indicado)
+3. **Deploy da edge function `pipefy-card-moved`** (já registrada em `supabase/config.toml` com `verify_jwt = false`).
 
-4. **Reportar o resultado** com `sizeBytes` e qualquer ajuste necessário (ex.: caminho do template no bucket).
+4. **Verificação** via logs da function — peço pra você mover um card no Pipefy pra fase "Contrato em elaboração" e confirmo:
+   - webhook respondeu 200
+   - novo registro em `contracts` com `pipefy_card_id` preenchido e `status = 'draft'`
+   - aparece em `/history`
 
-## Observação
+### Observações
 
-Não há necessidade de criar arquivos novos — só adicionar a configuração do `verify_jwt`, deployar e testar.
+- Não vou recriar o webhook no Pipefy (id 300671623 já existe).
+- Não vou alterar o código da function — só deploy.
+- Ordem importa: secret antes do deploy, pra function já subir com a env var disponível.
