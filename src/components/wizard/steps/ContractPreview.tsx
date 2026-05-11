@@ -209,7 +209,7 @@ _______________________________
 
     setIsDownloadingDocx(true);
     try {
-      const blob = new Blob([docxBytes], {
+      const blob = new Blob([docxBytes as BlobPart], {
         type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       });
       const url = URL.createObjectURL(blob);
