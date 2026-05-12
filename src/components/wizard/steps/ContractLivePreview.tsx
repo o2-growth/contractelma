@@ -5,6 +5,7 @@ import rehypeRaw from "rehype-raw";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FileText } from "lucide-react";
 import type { ClientData, Template } from "../ContractWizard";
+import { enrichClientDataForTemplate, dataPorExtenso } from "@/lib/formatters/contractFormatters";
 
 interface ContractLivePreviewProps {
   template: Template | null;
@@ -15,11 +16,27 @@ export function ContractLivePreview({ template, clientData }: ContractLivePrevie
   const renderedContent = useMemo(() => {
     if (!template?.content) return null;
 
-    return template.content.replace(/\{\{(\w+)\}\}/g, (_match, key: string) => {
-      const value = clientData[key] || clientData[key.toLowerCase()];
+    const enriched = enrichClientDataForTemplate(clientData);
+    const autoReplacements: Record<string, string> = {
+      DATA_EXTENSO: dataPorExtenso(new Date()),
+    };
+
+    const replaced = template.content.replace(/\{\{(\w+)\}\}/g, (_match, key: string) => {
+      const auto = autoReplacements[key] || autoReplacements[key.toUpperCase()];
+      if (auto) return `**${auto}**`;
+      const value =
+        enriched[key] ||
+        enriched[key.toLowerCase()] ||
+        enriched[key.toUpperCase()];
       if (value) return `**${value}**`;
+      // Campo opcional / não preenchido: mostra como pill <var> destacada
+      // (UX de "campo vazio" no preview ao vivo). Nunca deixa o literal {{...}}.
       return `<var>${key}</var>`;
     });
+
+    // Sweep final: garante que nenhum placeholder {{...}} sobreviva ao replace
+    // (defensive — cobre casos de chaves com caracteres fora de \w).
+    return replaced.replace(/\{\{[^}]+\}\}/g, "");
   }, [template, clientData]);
 
   if (!template?.content) {

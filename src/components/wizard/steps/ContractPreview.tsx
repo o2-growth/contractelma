@@ -1,13 +1,28 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Download, FileText, Loader2, AlertCircle, AlertTriangle, FileType, Eye } from "lucide-react";
+import { Download, FileText, Loader2, AlertCircle, AlertTriangle, FileType, Eye, RefreshCw, Pencil, X } from "lucide-react";
 import { SendToSignature } from "./SendToSignature";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import type { ContractData } from "../ContractWizard";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import mammoth from "mammoth";
+import { enrichClientDataForTemplate, dataPorExtenso } from "@/lib/formatters/contractFormatters";
+
+// Conjunto único de chaves auto-preenchidas (derivadas / formatadas).
+// Mantido em sincronia com ClientDataImport.AUTO_FILLED_KEYS e enrichClientDataForTemplate.
+const AUTO_FILLED = new Set([
+  "PRODUTOS",
+  "valor_extenso_setup",
+  "valor_plataforma_extenso",
+  "parcelas_valor_extenso",
+  "data_assinatura_extenso",
+  "DATA_EXTENSO",
+]);
 
 interface ContractPreviewProps {
   contractData: ContractData;
@@ -35,15 +50,48 @@ export function ContractPreview({ contractData }: ContractPreviewProps) {
   const [docxBytes, setDocxBytes] = useState<Uint8Array | null>(null);
   const [docxFileName, setDocxFileName] = useState<string | null>(null);
   const [isRenderingDocx, setIsRenderingDocx] = useState(false);
+  const [docxRenderError, setDocxRenderError] = useState<string | null>(null);
+
+  // Modo edição inline do contrato
+  const [editMode, setEditMode] = useState(false);
+  const [editedContent, setEditedContent] = useState<string | null>(null);
+
+  // Watchdog: se isRenderingDocx ficar "true" por mais de 15s sem o handleGenerate
+  // estar rodando, considera estado zumbi e força reset (defesa em profundidade
+  // contra promises pendentes que não resolveram nem rejeitaram).
+  useEffect(() => {
+    if (!isRenderingDocx || isGenerating) return;
+    const t = setTimeout(() => {
+      setIsRenderingDocx(false);
+      setDocxRenderError(
+        "Renderização DOCX travou — usando markdown como fallback. Você ainda pode tentar gerar novamente."
+      );
+    }, 15000);
+    return () => clearTimeout(t);
+  }, [isRenderingDocx, isGenerating]);
 
   const hasDocxTemplate = Boolean(contractData.template?.docxTemplate);
 
+  // Campos do template considerados "preenchíveis pelo usuário" (exclui auto-filled).
+  const fillableTemplateKeys = useMemo(() => {
+    const allVars = extractTemplateVars(contractData.template?.content);
+    return allVars.filter((k) => !AUTO_FILLED.has(k));
+  }, [contractData.template?.content]);
+
   // Calculate missing fields
   const missingFields = useMemo(() => {
-    const allVars = extractTemplateVars(contractData.template?.content);
-    const autoFilled = new Set(["PRODUTOS"]);
-    return allVars.filter((k) => !autoFilled.has(k) && !(contractData.clientData[k] || "").trim());
-  }, [contractData]);
+    return fillableTemplateKeys.filter((k) => !(contractData.clientData[k] || "").trim());
+  }, [fillableTemplateKeys, contractData.clientData]);
+
+  const totalFields = fillableTemplateKeys.length;
+  const filledFields = useMemo(() => {
+    if (totalFields === 0) {
+      // Sem template definido: caímos no comportamento legado (qualquer campo do clientData).
+      return Object.values(contractData.clientData).filter((v) => v.length > 0).length;
+    }
+    return fillableTemplateKeys.filter((k) => (contractData.clientData[k] || "").trim().length > 0).length;
+  }, [fillableTemplateKeys, contractData.clientData, totalFields]);
+  const fillProgress = totalFields > 0 ? (filledFields / totalFields) * 100 : 0;
 
   const generateContractLocally = () => {
     const template = contractData.template?.content || getDefaultTemplate();
@@ -80,7 +128,11 @@ _______________________________
   const replacePlaceholders = (template: string, data: ContractData) => {
     const autoReplacements: Record<string, string> = {
       DATA: formatDate(new Date()),
+      DATA_EXTENSO: dataPorExtenso(new Date()),
     };
+
+    // Enriquece o clientData com *_extenso, *_brl, valor_extenso_setup etc.
+    const enriched = enrichClientDataForTemplate(data.clientData);
 
     let result = template;
 
@@ -89,11 +141,15 @@ _______________________________
       result = result.split(`{{${key.toLowerCase()}}}`).join(value);
     }
 
-    for (const [key, value] of Object.entries(data.clientData)) {
+    for (const [key, value] of Object.entries(enriched)) {
       result = result.split(`{{${key}}}`).join(value);
       result = result.split(`{{${key.toUpperCase()}}}`).join(value);
       result = result.split(`{{${key.toLowerCase()}}}`).join(value);
     }
+
+    // Sweep final: remove qualquer placeholder remanescente {{algo}} para não
+    // vazar literais no contrato final quando o campo é opcional/vazio.
+    result = result.replace(/\{\{(\w+)\}\}/g, "");
 
     return result;
   };
@@ -101,6 +157,7 @@ _______________________________
   const handleGenerate = async () => {
     setIsGenerating(true);
     setError(null);
+    setDocxRenderError(null);
 
     try {
       // 1. Geração local em markdown (rápida) sempre acontece
@@ -114,16 +171,29 @@ _______________________________
       if (docxTemplate) {
         setIsRenderingDocx(true);
         try {
-          const { data, error: fnError } = await supabase.functions.invoke(
-            "render-contract-docx",
-            {
-              body: {
-                docxTemplate,
-                clientData: contractData.clientData,
-                contractName: `contrato_${getClientLabel()}`,
-              },
-            }
-          );
+          // Promise.race com timeout de 15s pra não travar o spinner indefinidamente.
+          const invokePromise = supabase.functions.invoke("render-contract-docx", {
+            body: {
+              docxTemplate,
+              clientData: contractData.clientData,
+              contractName: `contrato_${getClientLabel()}`,
+            },
+          });
+          const timeoutPromise = new Promise<never>((_, reject) => {
+            setTimeout(
+              () =>
+                reject(
+                  new Error(
+                    "Timeout ao renderizar DOCX — usando preview markdown como fallback"
+                  )
+                ),
+              15000
+            );
+          });
+          const { data, error: fnError } = (await Promise.race([
+            invokePromise,
+            timeoutPromise,
+          ])) as Awaited<typeof invokePromise>;
 
           if (fnError) throw new Error(fnError.message || "Falha na edge function");
           if (!data?.success) throw new Error(data?.error || "Falha ao renderizar DOCX");
@@ -156,9 +226,17 @@ _______________________________
           setDocxHtml(result.value);
         } catch (renderErr) {
           console.error("Erro ao renderizar preview DOCX:", renderErr);
-          // Não bloqueia — markdown continua funcionando
+          // Não bloqueia — markdown continua funcionando, mas limpamos qualquer
+          // estado parcial pra não exibir preview corrompido.
+          setDocxHtml(null);
+          setDocxBytes(null);
+          setDocxFileName(null);
+          const msg = renderErr instanceof Error ? renderErr.message : "tente novamente";
+          setDocxRenderError(
+            "Renderização DOCX falhou — mostrando markdown. Você ainda pode tentar gerar novamente."
+          );
           toast.warning("Preview com design indisponível — usando markdown", {
-            description: renderErr instanceof Error ? renderErr.message : "tente novamente",
+            description: msg,
           });
         } finally {
           setIsRenderingDocx(false);
@@ -199,6 +277,21 @@ _______________________________
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     toast.success("Markdown baixado");
+  };
+
+  const handleDownloadTxt = () => {
+    const content = editedContent ?? generatedContent;
+    if (!content) return;
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `contrato_${getClientLabel()}_${Date.now()}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("TXT baixado");
   };
 
   const handleDownloadDocx = async () => {
@@ -256,9 +349,96 @@ _______________________________
             <span className="text-sm font-medium text-muted-foreground">
               {contractData.template?.name || "Contrato"}
             </span>
+            {isGenerated && editedContent !== null && editedContent !== generatedContent && (
+              <Badge variant="outline" className="ml-2 border-amber-400 bg-amber-50 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700 text-[10px] h-5 px-1.5">
+                Editado
+              </Badge>
+            )}
+            {isGenerated && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setEditMode((v) => !v)}
+                className="ml-auto gap-1 h-7 px-2 text-xs"
+              >
+                {editMode ? (
+                  <>
+                    <X className="h-3 w-3" />
+                    Cancelar edição
+                  </>
+                ) : (
+                  <>
+                    <Pencil className="h-3 w-3" />
+                    Editar contrato
+                  </>
+                )}
+              </Button>
+            )}
           </div>
 
           <div className="p-8 max-h-[800px] overflow-y-auto bg-muted/20">
+            {editMode && isGenerated ? (
+              <div className="flex flex-col h-full max-h-[750px]">
+                <div className="mb-3 text-xs text-muted-foreground flex items-center gap-2 px-2">
+                  <Pencil className="h-3 w-3" />
+                  Edite o conteúdo do contrato. Suas alterações serão preservadas no envio.
+                </div>
+                <Textarea
+                  value={editedContent ?? generatedContent ?? ""}
+                  onChange={(e) => setEditedContent(e.target.value)}
+                  className="flex-1 font-mono text-xs min-h-[600px] resize-none bg-white"
+                  placeholder="Conteúdo do contrato..."
+                />
+                <div className="mt-3 flex gap-2 justify-end px-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setEditedContent(null);
+                      setEditMode(false);
+                      toast.info("Edições descartadas");
+                    }}
+                  >
+                    Descartar alterações
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setEditMode(false);
+                      toast.success("Alterações salvas — serão usadas no envio");
+                    }}
+                  >
+                    Salvar alterações
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+            {/* Banner de erro discreta quando o render DOCX falhou/timeout */}
+            {isGenerated && !isRenderingDocx && docxRenderError && (
+              <div className="mb-4 flex items-start justify-between gap-3 rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-3">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-800 dark:text-amber-300">
+                    {docxRenderError}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setDocxRenderError(null);
+                    handleGenerate();
+                  }}
+                  disabled={isGenerating || isRenderingDocx}
+                  className="gap-1 h-7 px-2 text-xs"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  Tentar novamente
+                </Button>
+              </div>
+            )}
+
             {/* Loading enquanto a edge function processa o DOCX */}
             {isRenderingDocx && (
               <div className="flex flex-col items-center justify-center py-12 gap-3">
@@ -344,6 +524,8 @@ _______________________________
                 )}
               </div>
             )}
+              </>
+            )}
           </div>
         </motion.div>
 
@@ -374,8 +556,11 @@ _______________________________
               <div>
                 <span className="text-muted-foreground text-xs uppercase tracking-wider">Campos preenchidos</span>
                 <p className="font-medium text-foreground mt-0.5">
-                  {Object.values(contractData.clientData).filter(v => v.length > 0).length}
+                  {totalFields > 0 ? `${filledFields} de ${totalFields}` : filledFields}
                 </p>
+                {totalFields > 0 && (
+                  <Progress value={fillProgress} className="h-1.5 mt-1" />
+                )}
               </div>
             </div>
           </div>
@@ -426,7 +611,7 @@ _______________________________
               </Button>
             ) : (
               <>
-                {hasDocxTemplate && (
+                {docxBytes ? (
                   <Button
                     onClick={handleDownloadDocx}
                     disabled={isDownloadingDocx}
@@ -439,17 +624,42 @@ _______________________________
                     )}
                     {isDownloadingDocx ? "Gerando DOCX..." : "Baixar DOCX (design preservado)"}
                   </Button>
-                )}
+                ) : hasDocxTemplate ? (
+                  <Button
+                    onClick={() => {
+                      setDocxRenderError(null);
+                      handleGenerate();
+                    }}
+                    disabled={isGenerating || isRenderingDocx}
+                    variant="outline"
+                    className="w-full gap-2"
+                  >
+                    {isRenderingDocx ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4" />
+                    )}
+                    {isRenderingDocx ? "Renderizando..." : "Tentar renderizar DOCX novamente"}
+                  </Button>
+                ) : null}
                 <Button
                   onClick={handleDownloadMd}
-                  variant={hasDocxTemplate ? "outline" : "default"}
+                  variant={docxBytes ? "outline" : "default"}
                   className={cn(
                     "w-full gap-2",
-                    !hasDocxTemplate && "bg-success hover:bg-success/90"
+                    !docxBytes && "bg-success hover:bg-success/90"
                   )}
                 >
                   <Download className="h-4 w-4" />
-                  {hasDocxTemplate ? "Baixar Markdown (preview)" : "Baixar Contrato"}
+                  {docxBytes ? "Baixar Contrato (.md)" : "Baixar Contrato"}
+                </Button>
+                <Button
+                  onClick={handleDownloadTxt}
+                  variant="outline"
+                  className="w-full gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Baixar Contrato (.txt)
                 </Button>
                 <Button
                   onClick={() => {
@@ -459,6 +669,9 @@ _______________________________
                     setDocxHtml(null);
                     setDocxBytes(null);
                     setDocxFileName(null);
+                    setDocxRenderError(null);
+                    setEditMode(false);
+                    setEditedContent(null);
                   }}
                   variant="outline"
                   className="w-full"
@@ -470,24 +683,45 @@ _______________________________
           </div>
 
           {isGenerated && (
-            <>
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center text-sm text-success"
-              >
-                🎉 Contrato gerado com sucesso!
-              </motion.p>
-              <SendToSignature
-                contractName={contractData.template?.name || "Contrato"}
-                contractContent={generatedContent || ""}
-                clientData={contractData.clientData}
-                docxTemplate={contractData.template?.docxTemplate}
-              />
-            </>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center text-sm text-success"
+            >
+              🎉 Contrato gerado com sucesso!
+            </motion.p>
           )}
         </motion.div>
       </div>
+
+      {/* SendToSignature full-width abaixo do preview — fica apertado demais dentro da sidebar 1/3 */}
+      {isGenerated && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mt-8 max-w-4xl mx-auto"
+        >
+          {!editMode && editedContent !== null && editedContent !== generatedContent && (
+            <div className="mb-4 flex items-start gap-2 rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-3">
+              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-800 dark:text-amber-300">
+                Você editou o contrato. A versão editada (não o template original) será enviada para a Autentique.
+              </p>
+            </div>
+          )}
+          <SendToSignature
+            contractName={contractData.template?.name || "Contrato"}
+            contractContent={editedContent ?? generatedContent ?? ""}
+            clientData={contractData.clientData}
+            docxTemplate={
+              editedContent != null && editedContent !== generatedContent
+                ? undefined
+                : contractData.template?.docxTemplate
+            }
+          />
+        </motion.div>
+      )}
     </div>
   );
 }

@@ -32,3 +32,8 @@ templates_base/PARA_UPLOAD_NO_SUPABASE/
 # Supabase
 supabase/.temp/
 supabase/.branches/
+
+# Playwright
+test-results/
+playwright-report/
+e2e/screenshots/

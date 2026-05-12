@@ -516,6 +516,7 @@ export const availablePlaceholders = [
   { key: "servico", label: "Descrição do Serviço", category: "contrato", tooltip: "Ex: SaaS, Plataforma Oxy + Gênio, Consultoria" },
   { key: "valor_extenso_setup", label: "Valor do Setup (por extenso)", category: "pagamento", tooltip: "Ex: R$ 12.000,00 (doze mil reais)" },
   { key: "parcelas_valor_extenso", label: "Parcelas do Setup (por extenso)", category: "pagamento", tooltip: "Ex: 12 (doze) parcelas de R$ 1.000,00" },
+  { key: "qtd_parcelas_setup", label: "Quantidade de Parcelas do Setup", category: "pagamento", tooltip: "Número (ex: 12)" },
   { key: "data_setup", label: "Data de Início do Setup", category: "pagamento", tooltip: "Ex: 01/06/2026" },
   { key: "condicoes_especiais", label: "Condições Especiais (Setup)", category: "pagamento", tooltip: "Condições especiais do pagamento do setup" },
   { key: "valor_plataforma", label: "Valor Mensal da Plataforma", category: "pagamento", tooltip: "Ex: R$ 2.500,00 (dois mil e quinhentos reais)" },

@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Upload, FileText, User, X, AlertCircle, RefreshCw, Building2, UserCircle, Phone, CreditCard, FileSignature, PenLine, Info, Eraser } from "lucide-react";
+import { Upload, FileText, User, X, AlertCircle, RefreshCw, Building2, UserCircle, Phone, CreditCard, FileSignature, PenLine, Info, Eraser, CalendarClock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,25 @@ import type { ClientData, Template } from "../ContractWizard";
 import { availablePlaceholders } from "@/constants/contractTemplates";
 import { cn } from "@/lib/utils";
 import { ContractLivePreview } from "./ContractLivePreview";
+import {
+  formatCPF,
+  formatCNPJ,
+  formatCEP,
+  formatTelefone,
+  formatBRL,
+  formatBRLComExtenso,
+  dataPorExtenso,
+  parseValorBR,
+  parseDateBR,
+  buscarCep,
+  montarEnderecoCompleto,
+  isCpfField,
+  isCnpjField,
+  isCepField,
+  isPhoneField,
+  isCurrencyField,
+  isDateField,
+} from "@/lib/formatters/contractFormatters";
 
 interface ClientDataImportProps {
   clientData: ClientData;
@@ -22,9 +41,14 @@ interface ClientDataImportProps {
   selectedTemplate: Template | null;
 }
 
-// Variables that are auto-filled (not shown as fields)
+// Variables that are auto-filled (not shown as fields — derived from other inputs)
 const AUTO_FILLED_KEYS = new Set([
   "PRODUTOS",
+  "valor_extenso_setup",
+  "valor_plataforma_extenso",
+  "parcelas_valor_extenso",
+  "data_assinatura_extenso",
+  "DATA_EXTENSO",
 ]);
 
 const CATEGORY_META: Record<string, { label: string; icon: React.ReactNode }> = {
@@ -96,19 +120,33 @@ interface ExtractedField {
 
 type ExtractedFields = Record<string, ExtractedField>;
 
-// Simple inline validations
+// Simple inline validations — leniente, pois as máscaras já formatam no blur
 function validateField(key: string, value: string): string | null {
   if (!value) return null;
-  if (key === "CNPJ" && !/^\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}$/.test(value.replace(/\s/g, ""))) {
-    return "Formato: XX.XXX.XXX/XXXX-XX";
+  if (isCnpjField(key)) {
+    const digits = value.replace(/\D/g, "");
+    if (digits.length > 0 && digits.length !== 14) return "CNPJ deve ter 14 dígitos";
   }
-  if ((key === "CPF_REPRESENTANTE" || key === "CPF") && !/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/.test(value.replace(/\s/g, ""))) {
-    return "Formato: XXX.XXX.XXX-XX";
+  if (isCpfField(key)) {
+    const digits = value.replace(/\D/g, "");
+    if (digits.length > 0 && digits.length !== 11) return "CPF deve ter 11 dígitos";
   }
-  if (key.includes("EMAIL") && value.length > 3 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+  if (isCepField(key)) {
+    const digits = value.replace(/\D/g, "");
+    if (digits.length > 0 && digits.length !== 8) return "CEP deve ter 8 dígitos";
+  }
+  if (/EMAIL|email/.test(key) && value.length > 3 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
     return "E-mail inválido";
   }
   return null;
+}
+
+// Acha a melhor chave de ENDERECO no clientData (UPPER, lower, mixed)
+function findEnderecoKey(clientData: Record<string, string>): string {
+  const candidates = Object.keys(clientData).filter((k) => /endereco|endereço/i.test(k));
+  if (candidates.length) return candidates[0];
+  // Default — usa a primeira convenção encontrada nas keys, ou cria ENDERECO
+  return "ENDERECO";
 }
 
 export function ClientDataImport({ clientData, onChange, selectedTemplate }: ClientDataImportProps) {
@@ -215,11 +253,28 @@ export function ClientDataImport({ clientData, onChange, selectedTemplate }: Cli
       const extracted = data.data as ExtractedFields;
       setExtractedFields(extracted);
 
+      // Aplica máscaras automáticas em valores extraídos pela IA
+      const maskValue = (k: string, v: string): string => {
+        if (!v) return v;
+        if (isCpfField(k)) return formatCPF(v);
+        if (isCnpjField(k)) return formatCNPJ(v);
+        if (isCepField(k)) return formatCEP(v);
+        if (isPhoneField(k)) return formatTelefone(v);
+        if (isCurrencyField(k)) {
+          const num = parseValorBR(v);
+          return num > 0 ? formatBRL(num) : v;
+        }
+        return v;
+      };
+
       const newData: ClientData = { ...clientData };
       for (const [key, field] of Object.entries(extracted)) {
+        if (!field.value) continue;
         const upperKey = key.toUpperCase();
-        if (field.value) newData[upperKey] = field.value;
-        if (field.value) newData[key] = field.value;
+        const maskedUpper = maskValue(upperKey, field.value);
+        const maskedLower = maskValue(key, field.value);
+        newData[upperKey] = maskedUpper;
+        newData[key] = maskedLower;
       }
       onChange(newData);
 
@@ -249,8 +304,125 @@ export function ClientDataImport({ clientData, onChange, selectedTemplate }: Cli
   };
 
   const handleFieldChange = (key: string, value: string) => {
-    onChange({ ...clientData, [key]: value });
+    // Máscaras "leves" durante a digitação — não atrapalham o usuário
+    let next = value;
+    if (isCpfField(key)) next = formatCPF(value);
+    else if (isCnpjField(key)) next = formatCNPJ(value);
+    else if (isCepField(key)) next = formatCEP(value);
+    else if (isPhoneField(key)) next = formatTelefone(value);
+    onChange({ ...clientData, [key]: next });
   };
+
+  // No blur: aplica máscara "pesada" (BRL) e dispara ações como busca de CEP
+  const handleFieldBlur = useCallback(
+    async (key: string, value: string) => {
+      if (!value) return;
+
+      // First-match-wins: data / documento / telefone NUNCA caem em currency
+      if (isDateField(key) || isCpfField(key) || isCnpjField(key) || isPhoneField(key)) {
+        // máscaras já aplicadas em onChange — nada a fazer no blur
+        return;
+      }
+
+      // BRL: só formata no blur pra não atrapalhar digitação
+      if (isCurrencyField(key)) {
+        const num = parseValorBR(value);
+        if (num > 0) {
+          const formatted = formatBRL(num);
+          if (formatted !== value) {
+            onChange({ ...clientData, [key]: formatted });
+          }
+        }
+        return;
+      }
+
+      // CEP: busca endereço via ViaCEP quando temos 8 dígitos
+      if (isCepField(key)) {
+        const digits = value.replace(/\D/g, "");
+        if (digits.length === 8) {
+          try {
+            const via = await buscarCep(digits);
+            if (via) {
+              const enderecoKey = findEnderecoKey(clientData);
+              const numero = clientData.NUMERO || clientData.numero || "";
+              const complemento = clientData.COMPLEMENTO || clientData.complemento || "";
+              const enderecoCompleto = montarEnderecoCompleto(via, numero, complemento);
+              const updated: ClientData = { ...clientData, [key]: formatCEP(digits) };
+              // Só preenche se o campo de endereço estiver vazio (não sobrescreve usuário)
+              if (!updated[enderecoKey] || updated[enderecoKey].trim().length === 0) {
+                updated[enderecoKey] = enderecoCompleto;
+              }
+              onChange(updated);
+              toast.success("Endereço encontrado", { description: enderecoCompleto });
+            }
+          } catch (e) {
+            // silencioso — usuário pode digitar manualmente
+          }
+        }
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [clientData, onChange]
+  );
+
+  // Preenche dia/mes/ano com a data de hoje
+  const usarDataDeHoje = useCallback(() => {
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, "0");
+    const mes = MESES_PT[now.getMonth()];
+    const yyyy = String(now.getFullYear());
+    const yy = yyyy.slice(-2);
+    const updated: ClientData = { ...clientData };
+    // Cobre tanto convenções minúsculas quanto maiúsculas
+    if ("dia" in clientData || updated.dia !== undefined) updated.dia = dd;
+    if ("DIA" in clientData) updated.DIA = dd;
+    if ("mes" in clientData || updated.mes !== undefined) updated.mes = mes;
+    if ("MES" in clientData) updated.MES = mes;
+    if ("ano" in clientData || updated.ano !== undefined) updated.ano = yy;
+    if ("ANO" in clientData) updated.ANO = yyyy;
+    // Se nenhum campo existir ainda, cria os 3 lowercase
+    if (
+      updated.dia === undefined && updated.DIA === undefined &&
+      updated.mes === undefined && updated.MES === undefined &&
+      updated.ano === undefined && updated.ANO === undefined
+    ) {
+      updated.dia = dd;
+      updated.mes = mes;
+      updated.ano = yy;
+    }
+    onChange(updated);
+    toast.success("Data de hoje preenchida");
+  }, [clientData, onChange]);
+
+  // Preview da data de assinatura (dia + mes + ano)
+  const dataAssinaturaPreview = useMemo(() => {
+    const dia = parseInt(clientData.dia || clientData.DIA || "", 10);
+    const mes = (clientData.mes || clientData.MES || "").toLowerCase();
+    const anoRaw = (clientData.ano || clientData.ANO || "").trim();
+    if (!dia || !mes || !anoRaw) return null;
+    let ano = parseInt(anoRaw, 10);
+    if (!Number.isNaN(ano) && ano < 100) ano += 2000;
+    const mesIdx = MESES_PT.indexOf(mes);
+    if (mesIdx < 0 || Number.isNaN(ano)) return null;
+    const diaStr = dia === 1 ? "1º" : String(dia);
+    return `${diaStr} de ${MESES_PT[mesIdx]} de ${ano}`;
+  }, [clientData]);
+
+  // Warning: assinatura anterior ao início da vigência
+  const assinaturaAnteriorVigencia = useMemo(() => {
+    const dia = parseInt(clientData.dia || clientData.DIA || "", 10);
+    const mes = (clientData.mes || clientData.MES || "").toLowerCase();
+    const anoRaw = (clientData.ano || clientData.ANO || "").trim();
+    if (!dia || !mes || !anoRaw) return false;
+    let ano = parseInt(anoRaw, 10);
+    if (!Number.isNaN(ano) && ano < 100) ano += 2000;
+    const mesIdx = MESES_PT.indexOf(mes);
+    if (mesIdx < 0 || Number.isNaN(ano)) return false;
+    const dtAssinatura = new Date(ano, mesIdx, dia);
+    const inicioVig = parseDateBR(clientData.inicio_vigencia || clientData.INICIO_VIGENCIA || "");
+    if (!inicioVig) return false;
+    return dtAssinatura.getTime() < inicioVig.getTime();
+  }, [clientData]);
 
   const clearAllFields = () => {
     onChange({});
@@ -302,10 +474,43 @@ export function ClientDataImport({ clientData, onChange, selectedTemplate }: Cli
                   </div>
                 </AccordionTrigger>
                 <AccordionContent>
+                  {category === "assinatura" && (
+                    <>
+                      <div className="mb-3 flex items-center justify-between gap-2 rounded-md bg-muted/40 px-3 py-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={usarDataDeHoje}
+                          className="h-7 text-xs gap-1"
+                        >
+                          <CalendarClock className="h-3 w-3" />
+                          Usar data de hoje
+                        </Button>
+                        {dataAssinaturaPreview && (
+                          <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                            {dataAssinaturaPreview}
+                          </span>
+                        )}
+                      </div>
+                      {assinaturaAnteriorVigencia && (
+                        <div className="mb-3 flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-amber-800 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
+                          <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                          <span className="text-[11px]">
+                            ⚠ A data de assinatura é anterior ao início da vigência — confirme.
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  )}
                   <div className="grid gap-3 sm:grid-cols-2 pb-2">
                     {fields.map(({ key, label, tooltip }) => {
                       const val = clientData[key] || "";
                       const error = validateField(key, val);
+                      const isCurrency = isCurrencyField(key);
+                      const isDate = isDateField(key);
+                      const currencyHelper = isCurrency && val ? formatBRLComExtenso(val) : "";
+                      const dateExtenso = isDate && val ? dataPorExtenso(val) : "";
                       return (
                         <div key={key} className={cn("space-y-1.5", (key.includes("ENDERECO") || key === "RAZAO_SOCIAL" || key === "OBSERVACOES" || key === "DESCRICAO_SERVICOS") && "sm:col-span-2")}>
                           <div className="flex items-center gap-1.5">
@@ -327,10 +532,11 @@ export function ClientDataImport({ clientData, onChange, selectedTemplate }: Cli
                             id={key}
                             value={val}
                             onChange={(e) => handleFieldChange(key, e.target.value)}
+                            onBlur={(e) => handleFieldBlur(key, e.target.value)}
                             placeholder={tooltip || `Digite ${label.toLowerCase()}`}
                             className={cn(
                               "h-9 text-sm",
-                              (key === "CPF" || key.startsWith("CPF_") || key === "CNPJ") && "font-mono",
+                              (isCpfField(key) || isCnpjField(key) || isCepField(key) || isPhoneField(key)) && "font-mono",
                               error && "border-destructive focus-visible:ring-destructive"
                             )}
                           />
@@ -339,6 +545,12 @@ export function ClientDataImport({ clientData, onChange, selectedTemplate }: Cli
                               <AlertCircle className="h-3 w-3" />
                               {error}
                             </p>
+                          )}
+                          {!error && currencyHelper && (
+                            <p className="text-[11px] text-muted-foreground">{currencyHelper}</p>
+                          )}
+                          {!error && dateExtenso && (
+                            <p className="text-[11px] text-muted-foreground">(por extenso: {dateExtenso})</p>
                           )}
                         </div>
                       );
@@ -457,7 +669,7 @@ export function ClientDataImport({ clientData, onChange, selectedTemplate }: Cli
                 {!uploadedFile && (
                   <Button variant="ghost" size="sm" onClick={() => { setShowForm(false); setExtractedFields(null); }} className="h-7 text-xs gap-1">
                     <Upload className="h-3 w-3" />
-                    Upload
+                    Voltar ao upload
                   </Button>
                 )}
                 {filledCount > 0 && (
